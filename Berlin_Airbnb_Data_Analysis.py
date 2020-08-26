@@ -34,8 +34,18 @@ def load_dataset():
         'Slect the neighbourhood name',
         (neighbourhood_group)
     )
+    
+    # create  a map that updates based on selected
+    # neighbourhood
     st.text("Listings Distribution")
-    st.map(listings_data)
+    neighbourhood_selection = st.selectbox(
+        "Select Neighbourhood",
+        (neighbourhood_group))
+    # filter data based on selection
+    selected_neighbourhood_data = listings_data[listings_data['neighbourhood_group']==neighbourhood_selection]
+    
+    # plot plot data for the selected neighbourhood
+    st.map(selected_neighbourhood_data)
     # plot the distribution
     
     # return listings_data
