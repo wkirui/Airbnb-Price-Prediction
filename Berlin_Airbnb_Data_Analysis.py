@@ -18,6 +18,7 @@ def main():
              """)
     load_dataset()
 
+# @st.cache
 def load_dataset():
     listings_data = pd.read_csv("data/listings.csv")
     st.write("Listings Overview")
