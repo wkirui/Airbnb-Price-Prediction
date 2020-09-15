@@ -47,6 +47,7 @@ def main():
     plt.title("Price Distribution")
     plt.xlabel("Price ($)")
     plt.ylabel("Total Listings")
+    plt.xlim(0,1000) # check distribution
     st.pyplot()
 
 # define function to load data
