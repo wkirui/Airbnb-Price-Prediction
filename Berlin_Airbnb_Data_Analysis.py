@@ -164,6 +164,22 @@ def main():
         title='Average Prices by Neighbourhood')
     st.altair_chart(neighbourhood_chart)
     
+    # feature selection
+    st.write("""
+             #### Feature Selection
+             In this section we select the best features to work with in our model
+              - First we calculate the percentage of missing values in each column
+              - Then we drop features with mode than 30% missing values
+              - We have 21 columns in this category which include: 
+                  
+                  - 'interaction', 'host_about', 
+                  'neighborhood_overview', 'transit','security_deposit', 'host_acceptance_rate',
+                  'space', 'cleaning_fee'
+             """)
+    # drop columns with more than 30% missing values
+    listings_data_clean = drop_columns_with_missing_vals(listings_data_clean)
+    st.write(listings_data_clean.shape)
+    
 # # define function to load data
 # @st.cache
 def load_data():
@@ -207,7 +223,25 @@ def calculate_distance_from_city_center(df,lat,lon):
     
     return df
 
+# define function to drop columns
+def drop_columns_with_missing_vals(df):
+    """
+    @df: dataframe\
+        
+    drops columns with 30% missing values
+    """
+    percent_missing_values = round((df.isnull().sum()/len(df))*100,2)
+    percent_missing_values = pd.DataFrame({"column_name":df.columns,
+                                        "%_missing_values":percent_missing_values})
+    percent_missing_values = percent_missing_values.reset_index(drop=True)
 
+    # sort by % of missing values
+    percent_missing_values = percent_missing_values.sort_values(by='%_missing_values',ascending=False)
+    # print(len(percent_missing_values[percent_missing_values['%_missing_values']>30]))
+    columns_missing_more_than_30_pct_vals = [x for x in percent_missing_values[percent_missing_values['%_missing_values']>30]['column_name']]
+    df = df.drop(columns_missing_more_than_30_pct_vals,axis=1)
+    
+    return df
 # berlin center: 52.521948, 13.413698
 
 # def load_dataset():
