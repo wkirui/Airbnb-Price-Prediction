@@ -11,6 +11,8 @@ import numpy as np
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
+import altair as alt
+from math import radians,cos,sin,asin,sqrt
 
 # instantiate app
 def main():
@@ -24,8 +26,11 @@ def main():
     st.write(listings_data.head(10))
     
     # clean up price columns
-    st.write(" Looking at the price values, we can see that they currency denomination in dollars.\
-             We're going to clean them up so that we can start visualizing their distribution")
+    st.write(""" 
+             Looking at the price values, we can see that they currency denomination in dollars.\
+                 
+             We're going to clean them up so that we can start visualizing their distribution
+             """)
     # define a function to clean up price values
     def clean_prices_column(df,col):
         df[col] = df[col].str.replace('$','')
@@ -41,15 +46,42 @@ def main():
     
     # plot price distribution
     price_dist_sum = listings_data.groupby('price')['id'].count().rename('total').reset_index().sort_values(by='price',ascending=True)
-    st.write(price_dist_sum['price'].describe())
     
-    plt.scatter('price','total',data=price_dist_sum)
-    plt.title("Price Distribution")
-    plt.xlabel("Price ($)")
-    plt.ylabel("Total Listings")
-    plt.xlim(0,1000) # check distribution
-    st.pyplot()
-
+    prices_dist = pd.DataFrame(listings_data['price'].describe())
+    prices_dist = prices_dist.reset_index()
+    prices_dist.columns = ['statistic','value']
+    # st.write(len(listings_data[listings_data['price']==0]))
+    st.write("""
+             We can make the following observations from the price distribution:
+             - The average cost of renting an apartment is $74
+             - Prices range from $0 to $9000
+             - There are some apartments that do not have their prices indicated
+             - 75% of the listings cost $75 or less
+             
+             """)
+    st.write(prices_dist)
+    st.write("""
+             The following graph shows this distribution
+             """)
+    line_chart = alt.Chart(price_dist_sum).mark_line(interpolate='basis').encode(
+    alt.X('price', title='Price ($)'),
+    alt.Y('total', title='Total Listings'),
+    ).properties(
+        width = 700,height= 400,
+        title='Price Distribution')
+    st.altair_chart(line_chart)
+    
+    # calculate distance from city center
+    listings_data_clean = calculate_distance_from_city_center(listings_data_clean,'latitude','longitude')
+    
+    # plot price distribution based on distance from city center
+    distance_chart = alt.Chart(listings_data_clean).mark_line(interpolate='basis').encode(
+    alt.X('distance', title='Distance (km)'),
+    alt.Y('price', title='Price ($)'),
+    ).properties(
+        width = 700,height= 400,
+        title='Price Distribution by Distance from City Center')
+    st.altair_chart(distance_chart)
 # define function to load data
 # @st.cache
 def load_data():
@@ -57,6 +89,41 @@ def load_data():
                                  compression='gzip',header = 0,sep=',',quotechar='"',error_bad_lines=False,
                                  low_memory=False)
     return listings_data
+
+# define function to calculate distance
+# from the center of Berlin
+
+# define harvesine function
+def calculate_distance_from_city_center(df,lat,lon):
+    """
+    Calculates the great distance circle between
+    two gps coordinates
+    """
+    # define berlin center coordinates
+    center_lat = 52.521948
+    center_lon = 13.413698
+    
+    # convert decimal degrees to radians
+    df['lat1'] = df[lat].apply(lambda x : radians(x))
+    df['lon1'] = df[lon].apply(lambda x : radians(x))
+    lat2 = radians(center_lat)
+    lon2 = radians(center_lon)
+    
+    # calculate harvesine distance
+    df['dlat'] = lat2-df['lat1']
+    df['dlon'] = lon2-df['lon1']
+    
+    df['sin_dlat'] = df['dlat'].apply(lambda x : sin(x/2)**2)
+    df['cos_lat1'] = df['lat1'].apply(lambda x : cos(x))
+    df['sin_dlon'] = df['dlon'].apply(lambda x : sin(x/2)**2)
+    
+    df['a'] = df['sin_dlat']+df['cos_lat1']*cos(lat2)*df['sin_dlon']
+    df['distance'] = df['a'].apply(lambda x : round(2*asin(sqrt(x))*6371,3))
+    
+    # drop calculation columns
+    df = df.drop(['sin_dlat','sin_dlon','cos_lat1','lat1','lon1','dlat','dlon','a'],axis=1)
+    
+    return df
 
 
 # berlin center: 52.521948, 13.413698
