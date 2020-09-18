@@ -283,14 +283,12 @@ def main():
     # get R^2 score
     model_score = model.score(X_test,y_test)
     mse = mean_squared_error(y_test,y_pred)
-    st.write("Model Results:\n",
-             
-             "MSE:",round(model_score,4),
-             "RMSE:",round(mse**(1/2),4),
-             
-             """
-             \
-             The model returned a good R^2 score of 0.93 The root mean squared error is 53.3. 
+    st.write("Model Results:")
+    st.write("MSE:",round(model_score,4))
+    st.write("RMSE:",round(mse**(1/2),4))
+    st.write( """
+             The model returned a good R^2 score of 0.93 The root mean squared error is 53.3.\
+                 
              A $53 difference between our predicted prices and the actual values is high and we need to minimize this error through more iterations and feature selection
              """)
 
