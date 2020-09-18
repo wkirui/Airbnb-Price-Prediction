@@ -166,7 +166,7 @@ def main():
     
     # feature selection
     st.write("""
-             #### Feature Selection
+             ### Feature Selection
              In this section we select the best features to work with in our model
               - First we calculate the percentage of missing values in each column
               - Then we drop features with mode than 30% missing values
@@ -178,8 +178,50 @@ def main():
              """)
     # drop columns with more than 30% missing values
     listings_data_clean = drop_columns_with_missing_vals(listings_data_clean)
-    st.write(listings_data_clean.shape)
     
+    # filter apartments in Germany only
+    listings_data_clean = listings_data_clean[listings_data_clean['country_code']=='DE']
+    
+    #  let's define columns to use
+    # create list of potential features
+    working_list = ['id','host_is_superhost',
+                    'host_neighbourhood', 'host_listings_count', 'host_total_listings_count',
+                    'host_identity_verified', 'neighbourhood_cleansed',
+                    'neighbourhood_group_cleansed', 'city', 'state',
+                    'latitude', 'longitude', 'is_location_exact', 'property_type',
+                    'room_type', 'accommodates', 'bathrooms', 'bedrooms', 'beds', 'bed_type',
+                    'price', 'guests_included', 'extra_people', 'minimum_nights', 'maximum_nights',
+                    'minimum_minimum_nights', 'maximum_minimum_nights', 'minimum_maximum_nights', 
+                    'maximum_maximum_nights', 'minimum_nights_avg_ntm', 'maximum_nights_avg_ntm',
+                    'has_availability', 'availability_30', 'availability_60', 
+                    'availability_90', 'availability_365', 'number_of_reviews',
+                    'number_of_reviews_ltm','review_scores_rating', 
+                    'review_scores_accuracy','review_scores_cleanliness', 'review_scores_checkin',
+                    'review_scores_communication', 'review_scores_location', 'review_scores_value', 
+                    'requires_license', 'instant_bookable', 'is_business_travel_ready', 'cancellation_policy',
+                    'require_guest_profile_picture', 'require_guest_phone_verification',
+                    'calculated_host_listings_count', 'calculated_host_listings_count_entire_homes', 
+                    'calculated_host_listings_count_private_rooms', 'calculated_host_listings_count_shared_rooms',
+                    'reviews_per_month', 'distance']
+    # select only columns in our list
+    listings_data_clean = listings_data_clean[working_list]
+    st.write("- We then select the following 57 columns that potentially affect the airbnb prices",
+        listings_data_clean.head())
+    
+    # encode categorical columns
+    st.write("""
+             - Next we encode columns with categorical columns using One-Hot Encoding method. Specifically using pandas' **get_dummies** method
+             - The Resulting DataFrame has 537 columns! We definitely need to scale down the number of features
+             """)
+    # define columns to encode
+    columns_to_encode = ['host_neighbourhood','host_is_superhost','host_identity_verified','is_location_exact','neighbourhood_cleansed','neighbourhood_group_cleansed', 'city','state',
+                    'property_type','room_type','bed_type','requires_license','has_availability',
+                     'instant_bookable', 'is_business_travel_ready', 'cancellation_policy',
+                     'require_guest_profile_picture', 'require_guest_phone_verification']
+    # encode selected columns
+    encoded_listings_data = pd.get_dummies(listings_data_clean,
+                                       columns=columns_to_encode)
+    st.write(encoded_listings_data.head(10))
 # # define function to load data
 # @st.cache
 def load_data():
