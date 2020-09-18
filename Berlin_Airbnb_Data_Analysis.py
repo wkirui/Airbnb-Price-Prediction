@@ -16,6 +16,7 @@ import seaborn as sns
 import altair as alt
 from math import radians,cos,sin,asin,sqrt
 from sklearn.ensemble import RandomForestRegressor
+from sklearn.model_selection import train_test_split
 
 # instantiate app
 def main():
@@ -257,7 +258,32 @@ def main():
     # st.success('Done!')
     # 
 
+    # create our model
+    st.write("""
+             ### Modeling
+             - With our selected features, we can now go ahead and train the model
+             
+             """)
+    # prepare data fro modeling
+    top_n_features_list = [x for x in top_features_selected_df['feature']]
+    X = encoded_listings_data[top_n_features_list]
+    y = encoded_listings_data['price']
 
+    # split data into train and test
+    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)
+
+    # create a model
+    model = RandomForestRegressor()
+    model.fit(X_train,y_train)
+    
+    # make predictions with the model
+    y_pred = model.predict(X_test)
+
+    # get R^2 score
+    model_score = model.score(X_test,y_test)
+    mse = mean_squared_error(y_test,y_pred)
+    st.write(model_score,
+             "RMSE:",mse**(1/2))
 
 
 
