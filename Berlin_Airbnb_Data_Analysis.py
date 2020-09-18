@@ -169,6 +169,22 @@ def main():
         title='Average Prices by Neighbourhood')
     st.altair_chart(neighbourhood_chart)
     
+    # visualize distribution on the map
+    # st.text("Listings Distribution")
+    st.write("""
+             ### Map Visualization
+             We can use a map to visualize how these listings are distributed
+             """)
+    neighbourhood_group = [x for x in price_neighbourhood_summary['neighbourhood_group_cleansed'].unique()]
+    neighbourhood_selection = st.selectbox(
+        "Select Neighbourhood",
+        (sorted(neighbourhood_group)))
+    # filter data based on selection
+    selected_neighbourhood_data = listings_data_clean[listings_data_clean['neighbourhood_group_cleansed']==neighbourhood_selection]
+    
+    # plot plot data for the selected neighbourhood
+    st.map(selected_neighbourhood_data)
+    
     # feature selection
     st.write("""
              ### Feature Selection
