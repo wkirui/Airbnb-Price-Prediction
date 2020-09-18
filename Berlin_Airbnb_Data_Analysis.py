@@ -52,16 +52,7 @@ def main():
     prices_dist.columns = ['statistic','value']
     # st.write(len(listings_data[listings_data['price']==0]))
     st.write("""
-             We can make the following observations from the price distribution:
-             - The average cost of renting an apartment is $74
-             - Prices range from $0 to $9000
-             - There are some apartments that do not have their prices indicated
-             - 75% of the listings cost $75 or less
-             
-             """)
-    st.write(prices_dist)
-    st.write("""
-             The following graph shows this distribution
+             The following graph shows price distribution after cleaning it up.
              """)
     line_chart = alt.Chart(price_dist_sum).mark_line(interpolate='basis').encode(
     alt.X('price', title='Price ($)'),
@@ -70,19 +61,110 @@ def main():
         width = 700,height= 400,
         title='Price Distribution')
     st.altair_chart(line_chart)
+    st.write("""
+             We can make the following observations from the price distribution:
+             - The average cost of renting an apartment is $74
+             - Prices range from $0 to $9000
+             - There are some apartments that do not have their prices indicated
+             - 75% of the listings cost $75 or less
+             
+             As shown in this summary
+             
+             """)
+    st.write(prices_dist)
     
+    st.write("""
+             Let's look at how some of the features such as distance from the city center, number of bedrooms and apartment type affect prices
+             #### a) Distance from the city center
+             - Generally prices are lower as you move away from the city center
+             """)
     # calculate distance from city center
     listings_data_clean = calculate_distance_from_city_center(listings_data_clean,'latitude','longitude')
     
+    # calculate price summary
+    price_distance_summary = listings_data_clean.groupby('distance')['price'].mean().reset_index()
+    
     # plot price distribution based on distance from city center
-    distance_chart = alt.Chart(listings_data_clean).mark_line(interpolate='basis').encode(
+    distance_chart = alt.Chart(price_distance_summary).mark_line(interpolate='basis').encode(
     alt.X('distance', title='Distance (km)'),
     alt.Y('price', title='Price ($)'),
     ).properties(
         width = 700,height= 400,
-        title='Price Distribution by Distance from City Center')
+        title='Average Prices by Distance from the City Center')
     st.altair_chart(distance_chart)
-# define function to load data
+    
+    # bedrooms
+    st.write("""
+            #### b) Number of bedrooms
+             - Apartments with more bedrooms are more expensive
+             """)
+       # calculate price summary
+    price_bedrooms_summary = listings_data_clean.groupby('bedrooms')['price'].mean().reset_index()
+    
+    # plot price distribution based on number of bedrooms
+    num_bedrooms_chart = alt.Chart(price_bedrooms_summary).mark_line(interpolate='basis').encode(
+    alt.X('bedrooms', title='No. of Bedrooms)'),
+    alt.Y('price', title='Price ($)'),
+    ).properties(
+        width = 700,height= 400,
+        title='Average Prices by Number of Bedrooms')
+    st.altair_chart(num_bedrooms_chart)
+    
+    # room type
+    st.write("""
+            #### c) Room Type
+            - Private rooms are cheaper
+            - Hotel rooms cost up to 10 times more than other type of apartments
+             """)
+       # calculate price summary
+    price_room_type_summary = listings_data_clean.groupby('room_type')['price'].mean().reset_index()
+    price_room_type_summary = price_room_type_summary.sort_values(by='price',ascending=True)
+    # plot price distribution based on room type
+    room_type_chart = alt.Chart(price_room_type_summary).mark_bar().encode(
+    alt.X('room_type', title='Room Type',sort=alt.EncodingSortField(field="price", order='ascending')),
+    alt.Y('price', title='Price ($)'),
+    order = 'price'
+    ).properties(
+        width = 700,height= 400,
+        title='Average Prices by Room Type')
+    st.altair_chart(room_type_chart)
+    
+    # Review Score
+    st.write("""
+             #### d) Review Score
+              - Apartments with high review scores are cheaper on average
+             """)
+       # calculate price summary
+    price_review_summary = listings_data_clean.groupby('review_scores_rating')['price'].mean().reset_index()
+    
+    # plot price distribution based on number of bedrooms
+    review_score_chart = alt.Chart(price_review_summary).mark_line(interpolate='basis').encode(
+    alt.X('review_scores_rating', title='Review Rating (%)'),
+    alt.Y('price', title='Price ($)'),
+    ).properties(
+        width = 700,height= 400,
+        title='Average Prices by Review Rating')
+    st.altair_chart(review_score_chart)
+    
+        # Neighbourhood
+    st.write("""
+        #### d) Neighbourhood
+         - Charlettenburg-Wilmersdof borough has the most expensive airbnb apartments on average ($114)
+         - Reinickendorf apartments are the cheapest ($48)
+        """)
+       # calculate price summary
+    price_neighbourhood_summary = listings_data_clean.groupby('neighbourhood_group_cleansed')['price'].mean().reset_index()
+    price_neighbourhood_summary = price_neighbourhood_summary.sort_values(by='price',ascending=True)
+    # plot price distribution based on number of bedrooms
+    neighbourhood_chart = alt.Chart(price_neighbourhood_summary).mark_bar(interpolate='basis').encode(
+    alt.Y('neighbourhood_group_cleansed', title='Neighbourhood',sort=alt.EncodingSortField(field="price", order='descending')),
+    alt.X('price', title='Price ($)'),
+    ).properties(
+        width = 700,height= 400,
+        title='Average Prices by Neighbourhood')
+    st.altair_chart(neighbourhood_chart)
+    
+# # define function to load data
 # @st.cache
 def load_data():
     listings_data = pd.read_csv("data/listings.csv.gz",
