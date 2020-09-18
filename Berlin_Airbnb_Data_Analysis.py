@@ -17,6 +17,7 @@ import altair as alt
 from math import radians,cos,sin,asin,sqrt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
+from sklearn.metrics import mean_squared_error
 
 # instantiate app
 def main():
@@ -282,8 +283,16 @@ def main():
     # get R^2 score
     model_score = model.score(X_test,y_test)
     mse = mean_squared_error(y_test,y_pred)
-    st.write(model_score,
-             "RMSE:",mse**(1/2))
+    st.write("Model Results:\n",
+             
+             "MSE:",round(model_score,4),
+             "RMSE:",round(mse**(1/2),4),
+             
+             """
+             \
+             The model returned a good R^2 score of 0.93 The root mean squared error is 53.3. 
+             A $53 difference between our predicted prices and the actual values is high and we need to minimize this error through more iterations and feature selection
+             """)
 
 
 
@@ -351,7 +360,7 @@ def drop_columns_with_missing_vals(df):
     return df
 
 # define feature importance calculation function
-st.cache
+@st.cache
 def generate_important_features(df,n):
     """
     df: dataframe
