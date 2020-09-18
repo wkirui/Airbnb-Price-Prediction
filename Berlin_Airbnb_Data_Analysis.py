@@ -8,11 +8,14 @@
 # import module
 import pandas as pd
 import numpy as np
+from datetime import datetime,date
+import time
 import streamlit as st
 import matplotlib.pyplot as plt
 import seaborn as sns
 import altair as alt
 from math import radians,cos,sin,asin,sqrt
+from sklearn.ensemble import RandomForestRegressor
 
 # instantiate app
 def main():
@@ -211,7 +214,7 @@ def main():
     # encode categorical columns
     st.write("""
              - Next we encode columns with categorical columns using One-Hot Encoding method. Specifically using pandas' **get_dummies** method
-             - The Resulting DataFrame has 537 columns! We definitely need to scale down the number of features
+             - The Resulting DataFrame has 537 columns! We definitely need to scale down the number of features.
              """)
     # define columns to encode
     columns_to_encode = ['host_neighbourhood','host_is_superhost','host_identity_verified','is_location_exact','neighbourhood_cleansed','neighbourhood_group_cleansed', 'city','state',
@@ -221,7 +224,43 @@ def main():
     # encode selected columns
     encoded_listings_data = pd.get_dummies(listings_data_clean,
                                        columns=columns_to_encode)
-    st.write(encoded_listings_data.head(10))
+    st.write(encoded_listings_data.head(8))
+    
+    st.write("""
+             - We also impute missing values for the integer columns their mean values. Basically we calculate the mean values for these columns then we use them to fill the NAs
+             """)
+    # Impute missing values for integer columns
+    listings_int_values_data = encoded_listings_data.iloc[:,1:40]
+    total_vals_missing = listings_int_values_data.isnull().sum()
+    listings_int_values_df = pd.DataFrame({'column_name':listings_int_values_data.columns,
+                            'total_missing_vals':total_vals_missing})
+    listings_int_values_df = listings_int_values_df.reset_index(drop=True).sort_values('total_missing_vals',ascending=False)
+
+    # define list of columns to impute
+    columns_to_impute = [x for x in listings_int_values_df[listings_int_values_df['total_missing_vals']>0]['column_name']]
+
+    # impute missing values with mean
+    for col in columns_to_impute:
+        mean_val = round(np.mean(encoded_listings_data[col]),1)
+        encoded_listings_data[col] = encoded_listings_data[col].fillna(mean_val)
+    
+    st.write(""" 
+             ### Feature Importance
+             - After cleaning up the data, the next step is to select the most important features for our model. These are the features that have high influence on the target variable (price)
+             """)
+    
+    # generate top 50 features
+    with st.spinner('Please Hang on ...'):
+        top_features_selected_df = generate_important_features(encoded_listings_data,50)
+        st.write(top_features_selected_df)  
+    st.balloons()
+    # st.success('Done!')
+    # 
+
+
+
+
+
 # # define function to load data
 # @st.cache
 def load_data():
@@ -284,6 +323,44 @@ def drop_columns_with_missing_vals(df):
     df = df.drop(columns_missing_more_than_30_pct_vals,axis=1)
     
     return df
+
+# define feature importance calculation function
+st.cache
+def generate_important_features(df,n):
+    """
+    df: dataframe
+    n: number of features to select
+    """
+    # Create model using randomregressor
+
+    # prepare data for modeling
+    X = df.drop(['id','price'],axis=1)
+    y = df['price']
+
+    # model the data
+    model = RandomForestRegressor()
+    model.fit(X,y)
+
+    # get feature importance
+    feat_importances = model.feature_importances_
+    col_list = [x for x in X.columns]
+    feat_list = {}
+    for i,v in enumerate(feat_importances):
+    #     print("Feature: %0d, Score: %.5f" %(i,v))
+        feat_list[col_list[i]]= v
+
+    # create feature importance dataframe
+    feature_importances_df = pd.DataFrame(feat_list.items(),columns=['feature','score'])
+    feature_importances_df = feature_importances_df.sort_values('score',ascending=False)
+
+    # create a list of top 50 features
+    top_n_features_list = [x for x in feature_importances_df[:n]['feature']]
+
+    top_n_features_df = feature_importances_df[0:n]
+
+    return top_n_features_df
+
+
 # berlin center: 52.521948, 13.413698
 
 # def load_dataset():
