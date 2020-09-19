@@ -399,7 +399,7 @@ def generate_important_features(df,n):
     try:
         # check if we have saved the model
         model = pickle.load(open(saved_features_model,'wb'))
-    except expression as identifier:
+    except:
         # model the data
         model = RandomForestRegressor()
         model.fit(X,y)
@@ -425,46 +425,6 @@ def generate_important_features(df,n):
 
     return top_n_features_df
 
-
-# berlin center: 52.521948, 13.413698
-
-# def load_dataset():
-#     listings_data1 = pd.read_csv("data/listings.csv.gz",
-#                                  compression='gzip',header = 0,sep=',',quotechar='"',error_bad_lines=False)
-#     st.write(listings_data1.head())
-#     listings_data = pd.read_csv("data/listings.csv")
-#     st.write("Listings Overview")
-#     st.write(listings_data.head())
-    
-    
-#     # listings_info = pd.DataFrame(listings_data.info())
-    
-#     st.write("Listings Data Summary")
-#     st.write(listings_data.describe())
-    
-#     # let's add a sidebar for location
-#     neighbourhood_group = listings_data['neighbourhood_group'].unique()
-#     add_select_box = st.sidebar.selectbox(
-#         'Slect the neighbourhood name',
-#         (neighbourhood_group)
-#     )
-    
-#     # create  a map that updates based on selected
-#     # neighbourhood
-#     st.text("Listings Distribution")
-#     neighbourhood_selection = st.selectbox(
-#         "Select Neighbourhood",
-#         (neighbourhood_group))
-#     # filter data based on selection
-#     selected_neighbourhood_data = listings_data[listings_data['neighbourhood_group']==neighbourhood_selection]
-    
-#     # plot plot data for the selected neighbourhood
-#     st.map(selected_neighbourhood_data)
-#     # plot the distribution
-    
-    # return listings_data
-# # load data
-# st.write("Welcome to Berlin Airbnb data Analysis!")
 
 if __name__ == "__main__":
     main()
