@@ -51,9 +51,9 @@ def main():
         listings_data_clean = clean_prices_column(listings_data,col)
     
     # plot price distribution
-    price_dist_sum = listings_data.groupby('price')['id'].count().rename('total').reset_index().sort_values(by='price',ascending=True)
+    price_dist_sum = listings_data_clean.groupby('price')['id'].count().rename('total').reset_index().sort_values(by='price',ascending=True)
     
-    prices_dist = pd.DataFrame(listings_data['price'].describe())
+    prices_dist = pd.DataFrame(listings_data_clean['price'].describe())
     prices_dist = prices_dist.reset_index()
     prices_dist.columns = ['statistic','value']
     # st.write(len(listings_data[listings_data['price']==0]))
@@ -73,11 +73,43 @@ def main():
              - Prices range from $0 to $9000
              - There are some apartments that do not have their prices indicated
              - 75% of the listings cost $75 or less
+             - 5% of the listings cost more than the 95th percentile ($155)
+             - 0.5% (129) of the listings cost more than $500
              
              As shown in this summary
              
              """)
     st.write(prices_dist)
+    # # prices greater than 95th percentile
+    # median_price = listings_data_clean['price'].quantile(0.5)
+    # outlier_list = listings_data_clean['price'].quantile(0.95)
+    # outlier_df = listings_data_clean[listings_data_clean['price']>400]
+    # st.write("Median Price",median_price,"95th Percentile:",outlier_list,"Above 95th Percentile:",len(outlier_df))
+    # st.write(outlier_df.head(15))
+    
+    # let's see how this changes if we replace outliers with median prices
+    st.write("""
+             For this Analysis, we will cap the prices at $500.\
+            In order to do so, we replace prices that are more than $500 with the median price which is $50
+            """)
+    listings_data_clean = listings_data_clean.copy()
+    listings_data_clean = listings_data_clean[listings_data_clean['price']>0]
+    listings_data_clean['price'] = np.where(listings_data_clean['price']>500,50,listings_data_clean['price'])
+    prices_dist_trim = pd.DataFrame(listings_data_clean['price'].describe())
+    prices_dist_trim = prices_dist_trim.reset_index()
+    prices_dist_trim.columns = ['statistic','value']
+    st.write(prices_dist_trim,
+             "- Note that the standard deviation went down from 229 to 63 which means we now have less variability in the data")
+    
+    # # calculate log of price
+    # st.write("### Log of Prices")
+    # listings_data_clean_x = listings_data_clean[listings_data_clean['price']>0]
+    # price_log_vals = pd.DataFrame(np.log(listings_data_clean_x['price']))
+    # price_log_sum = price_log_vals.describe()
+    # st.write(price_log_sum)
+    # sns.distplot(price_log_vals)
+    # # st.pyplot()
+    # st.line_chart(price_log_vals)
     
     st.write("""
              Let's look at how some of the features such as distance from the city center, number of bedrooms and apartment type affect prices
@@ -120,7 +152,7 @@ def main():
     st.write("""
             #### c) Room Type
             - Private rooms are cheaper
-            - Hotel rooms cost up to 10 times more than other type of apartments
+            - Hotel rooms cost up to 3 times more than other type of apartments
              """)
        # calculate price summary
     price_room_type_summary = listings_data_clean.groupby('room_type')['price'].mean().reset_index()
@@ -155,12 +187,13 @@ def main():
         # Neighbourhood
     st.write("""
         #### d) Neighbourhood
-         - Charlettenburg-Wilmersdof borough has the most expensive airbnb apartments on average ($114)
-         - Reinickendorf apartments are the cheapest ($48)
+         - Mitte borough has the most expensive apartments on average ($72) followed by Charlettenburg-Wilmersdof borough ($70)
+         - Reinickendorf apartments are the cheapest ($45)
         """)
        # calculate price summary
     price_neighbourhood_summary = listings_data_clean.groupby('neighbourhood_group_cleansed')['price'].mean().reset_index()
     price_neighbourhood_summary = price_neighbourhood_summary.sort_values(by='price',ascending=True)
+    # st.write(price_neighbourhood_summary)
     # plot price distribution based on number of bedrooms
     neighbourhood_chart = alt.Chart(price_neighbourhood_summary).mark_bar(interpolate='basis').encode(
     alt.Y('neighbourhood_group_cleansed', title='Neighbourhood',sort=alt.EncodingSortField(field="price", order='descending')),
@@ -272,8 +305,8 @@ def main():
     with st.spinner('Please Hang on ...'):
         top_features_selected_df = generate_important_features(encoded_listings_data,50)
         st.write(top_features_selected_df)  
-    st.balloons()
-    # st.success('Done!')
+    # st.balloons()
+    st.success('Done!')
     # 
 
     # create our model
@@ -313,9 +346,9 @@ def main():
     st.write("MSE:",round(model_score,4))
     st.write("RMSE:",round(mse**(1/2),4))
     st.write( """
-             The model returned a good R^2 score of 0.93 The root mean squared error is 53.3.\
+             The model returned a good R^2 score of 0.93 The root mean squared error is 51.7.\
                  
-             A $53 difference between our predicted prices and the actual values is high and we need to minimize this error through more iterations and feature selection
+             A $51 difference between our predicted prices and the actual values is high and we need to minimize this error through more iterations and feature selection
              """)
 
 
