@@ -18,6 +18,7 @@ from math import radians,cos,sin,asin,sqrt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
+import pickle
 
 # instantiate app
 def main():
@@ -288,10 +289,17 @@ def main():
 
     # split data into train and test
     X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)
-
+    
+    # load saved model or create one
+    # create model name
+    trained_model_name = "trained_models/rf_model_v1.sav"
+    try:
+        model = pickle.load(open(trained_model_name,'rb'))
+    except:
     # create a model
-    model = RandomForestRegressor(max_depth=5,n_jobs=-1)
-    model.fit(X_train,y_train)
+        model = RandomForestRegressor(max_depth=5,n_jobs=-1)
+        model.fit(X_train,y_train)
+        pickle.dump(model,open(trained_model_name,'wb'))
     
     # make predictions with the model
     y_pred = model.predict(X_test)
@@ -385,10 +393,18 @@ def generate_important_features(df,n):
     # prepare data for modeling
     X = df.drop(['id','price'],axis=1)
     y = df['price']
-
-    # model the data
-    model = RandomForestRegressor()
-    model.fit(X,y)
+    
+    # load or create a model
+    saved_features_model = "trained_models/rf_features_model_v1.sav"
+    try:
+        # check if we have saved the model
+        model = pickle.load(open(saved_features_model,'wb'))
+    except expression as identifier:
+        # model the data
+        model = RandomForestRegressor()
+        model.fit(X,y)
+        # save the model
+        pickle.dump(model,open(saved_features_model,'rb'))
 
     # get feature importance
     feat_importances = model.feature_importances_
