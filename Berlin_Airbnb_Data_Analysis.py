@@ -93,8 +93,8 @@ def main():
             In order to do so, we replace prices that are more than $500 with the median price which is $50
             """)
     listings_data_clean = listings_data_clean.copy()
-    listings_data_clean = listings_data_clean[listings_data_clean['price']>0]
-    listings_data_clean['price'] = np.where(listings_data_clean['price']>500,50,listings_data_clean['price'])
+    listings_data_clean = listings_data_clean[(listings_data_clean['price']>0) & (listings_data_clean['price']<=500)]
+    # listings_data_clean['price'] = np.where(listings_data_clean['price']>500,50,listings_data_clean['price'])
     prices_dist_trim = pd.DataFrame(listings_data_clean['price'].describe())
     prices_dist_trim = prices_dist_trim.reset_index()
     prices_dist_trim.columns = ['statistic','value']
@@ -343,14 +343,21 @@ def main():
     model_score = model.score(X_test,y_test)
     mse = mean_squared_error(y_test,y_pred)
     st.write("Model Results:")
-    st.write("MSE:",round(model_score,4))
+    st.write("R-Squared:",round(model_score*100,2))
+    st.write("MSE:",round(mse,4))
     st.write("RMSE:",round(mse**(1/2),4))
     st.write( """
-             The model returned a good R^2 score of 0.93 The root mean squared error is 51.7.\
+             The model's R^2 score is 42% R^2. This means our model is not performing well at explaining the variability in our dataset.\
                  
-             A $51 difference between our predicted prices and the actual values is high and we need to minimize this error through more iterations and feature selection
+             The root mean squared error is 37.7 which means e have a $37 difference between our predicted prices and the actual prices which we can further minimize in order to improve our model.
              """)
-
+    
+    # Let's look at top predictions from our model
+    predicted_df = pd.DataFrame(y_pred,columns=['predicted'])
+    y_test = y_test.reset_index(drop=True)
+    actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
+    st.write("Here are the top prediction results",
+        actual_v_predictions_df.head(10))
 
 
 # # define function to load data
