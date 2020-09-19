@@ -294,12 +294,14 @@ def main():
     # create model name
     trained_model_name = "trained_models/rf_model_v1.sav"
     try:
-        model = pickle.load(open(trained_model_name,'rb'))
+        with open(trained_model_name,'rb') as f:
+            model = pickle.load(f)
     except:
     # create a model
         model = RandomForestRegressor(max_depth=5,n_jobs=-1)
         model.fit(X_train,y_train)
-        pickle.dump(model,open(trained_model_name,'wb'))
+        with open(trained_model_name,'wb') as f:
+            pickle.dump(model,f)
     
     # make predictions with the model
     y_pred = model.predict(X_test)
@@ -398,13 +400,15 @@ def generate_important_features(df,n):
     saved_features_model = "trained_models/rf_features_model_v1.sav"
     try:
         # check if we have saved the model
-        model = pickle.load(open(saved_features_model,'wb'))
+        with open(saved_features_model,'rb') as f:
+            model = pickle.load(f)
     except:
         # model the data
         model = RandomForestRegressor()
         model.fit(X,y)
         # save the model
-        pickle.dump(model,open(saved_features_model,'rb'))
+        with open(saved_features_model,'wb') as f:
+            pickle.dump(model,f)
 
     # get feature importance
     feat_importances = model.feature_importances_
