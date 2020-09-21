@@ -382,14 +382,24 @@ def main():
          'min_samples_leaf': min_samples_leaf,
          'bootstrap': bootstrap
         }
-    
-    # search best parameters
-    rf_model = RandomForestRegressor()
-    # search using 3 fold cross validation
-    rf_random = RandomizedSearchCV(estimator=rf_model,param_distributions=random_grid,
-                                   n_iter=100,cv=3,verbose=2,random_state=42,n_jobs=-1)
-    # fit the random search
-    rf_random.fit(X_train,y_train)
+    # load saved model
+    hyperparam_model = "trained_models/rf_hypermodel_v1.sav"
+    # load saved mode or
+    # train one
+    try:
+        with open(hyperparam_model,'rb') as f:
+        rf_random = pickle.load(f)
+    except:
+        # search best parameters
+        rf_model = RandomForestRegressor()
+        # search using 3 fold cross validation
+        rf_random = RandomizedSearchCV(estimator=rf_model,param_distributions=random_grid,
+                                       n_iter=100,cv=3,verbose=2,random_state=42,n_jobs=-1)
+        # fit the random search
+        rf_random.fit(X_train,y_train)
+        # open saved model
+        with open(hyperparam_model,'wb') as f:
+            pickle.dump(rf_random,f)
     
     # get best parameters
     st.write(rf_random.best_params_)
