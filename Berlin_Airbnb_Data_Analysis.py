@@ -19,6 +19,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 import pickle
+from sklearn.model_selection import RandomizedSearchCV
 
 # instantiate app
 def main():
@@ -312,7 +313,8 @@ def main():
     # create our model
     st.write("""
              ### Modeling
-             - With our selected features, we can now go ahead and train the model
+             With our selected features, we can now go ahead and train the model. 
+             We will use RandomForestRegressor for our baseline model
              
              """)
     # prepare data fro modeling
@@ -331,11 +333,13 @@ def main():
             model = pickle.load(f)
     except:
     # create a model
-        model = RandomForestRegressor(max_depth=5,n_jobs=-1)
+        model = RandomForestRegressor(max_depth=5,n_jobs=-1,random_state=42)
         model.fit(X_train,y_train)
         with open(trained_model_name,'wb') as f:
             pickle.dump(model,f)
     
+    # check model
+    st.write(model.get_params())
     # make predictions with the model
     y_pred = model.predict(X_test)
 
@@ -358,6 +362,37 @@ def main():
     actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
     st.write("Here are the top prediction results",
         actual_v_predictions_df.head(10))
+    
+    # hyperparameter tuning
+     # define parameters to optimize
+     n_estimators = [int(x) for x in np.linspace(start=200,stop=2000,num=50)]
+     max_features = ['auto','sqrt']
+     max_depth = [int(x) for x in np.linspace(10,110,num=11)]
+     max_depth.append(None)
+     min_samples_split = [2,5,10]
+     min_samples_leaf = [1,2,4]
+     bootstrap = [True,False]
+     
+     # define search grid
+     random_grid = {
+         'n_estimators': n_estimators,
+         'max_features': max_features,
+         'max_depth': max_depth,
+         'min_samples_split': min_samples_split,
+         'min_samples_leaf': min_samples_leaf,
+         'bootstrap': bootstrap
+     }
+    
+    # search best parameters
+    rf_model = RandomForestRegressor()
+    # search using 3 fold cross validation
+    rf_random = RandomizedSearchCV(estimator=rf_model,param_distributions=random_grid,
+                                   n_iter=100,cv=3,verbose=2,random_state=42,n_jobs=-1)
+    # fit the random search
+    rf_random.fit(X_train,y_train)
+    
+    # get best parameters
+    st.write(rf_random.best_params_)
 
 
 # # define function to load data
