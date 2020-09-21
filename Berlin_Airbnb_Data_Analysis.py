@@ -388,7 +388,7 @@ def main():
     # train one
     try:
         with open(hyperparam_model,'rb') as f:
-        rf_random = pickle.load(f)
+            rf_random = pickle.load(f)
     except:
         # search best parameters
         rf_model = RandomForestRegressor()
@@ -403,6 +403,31 @@ def main():
     
     # get best parameters
     st.write(rf_random.best_params_)
+    
+    # train the model with hyperparameters
+    hyper_model_name = "trained_models/rf_hypermodel_v1.sav"
+    try:
+        with open(hyper_model_name,'rb') as f:
+            hyper_model = pickle.load(f)
+    except:
+    # create a model using hyperparameters
+        hyper_model = RandomForestRegressor(n_estimators=334,max_depth=20,
+                                            min_samples_split=2,min_samples_leaf=1,
+                                            bootstrap=False,n_jobs=-1,random_state=42)
+        hyper_model.fit(X_train,y_train)
+        with open(hyper_model_name,'wb') as f:
+            pickle.dump(hyper_model,f)
+    
+    # make predictions with the model
+    y_pred = hyper_model.predict(X_test)
+
+    # get R^2 score
+    model_score = hyper_model.score(X_test,y_test)
+    mse = mean_squared_error(y_test,y_pred)
+    st.write("Model Results:")
+    st.write("R-Squared:",round(model_score*100,2))
+    st.write("MSE:",round(mse,4))
+    st.write("RMSE:",round(mse**(1/2),4))
 
 
 # # define function to load data
