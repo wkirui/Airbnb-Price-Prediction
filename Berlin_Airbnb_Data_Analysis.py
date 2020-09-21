@@ -401,6 +401,8 @@ def main():
         with open(hyperparam_model,'wb') as f:
             pickle.dump(rf_random,f)
     
+    # print random search model
+    st.write(rf_random)
     # get best parameters
     st.write(rf_random.best_params_)
     
@@ -420,7 +422,8 @@ def main():
     
     # make predictions with the model
     y_pred = hyper_model.predict(X_test)
-
+    # print model
+    st.write(hyper_model)
     # get R^2 score
     model_score = hyper_model.score(X_test,y_test)
     mse = mean_squared_error(y_test,y_pred)
@@ -428,8 +431,19 @@ def main():
     st.write("R-Squared:",round(model_score*100,2))
     st.write("MSE:",round(mse,4))
     st.write("RMSE:",round(mse**(1/2),4))
-
-
+    
+    st.write("""
+             - Our model prediction improved by 11% from $35 error margin to $31
+             - R2 also improved by 26% from 46 to 58 and hence our model is better at explaining the variability in the data
+             """)
+    predicted_df = pd.DataFrame(y_pred,columns=['predicted'])
+    y_test = y_test.reset_index(drop=True)
+    actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
+    st.write("Here are the top prediction results from the hyperparameter model",
+        actual_v_predictions_df.head(10))
+    
+    
+    
 # # define function to load data
 # @st.cache
 def load_data():
