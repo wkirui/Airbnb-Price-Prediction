@@ -16,7 +16,7 @@ import seaborn as sns
 import altair as alt
 from math import radians,cos,sin,asin,sqrt
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.metrics import mean_squared_error
 import pickle
 from sklearn.model_selection import RandomizedSearchCV
@@ -441,6 +441,10 @@ def main():
     actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
     st.write("Here are the top prediction results from the hyperparameter model",
         actual_v_predictions_df.head(10))
+    
+    # check model score
+    scores = cross_val_score(hyper_model,X_test,y_test,scoring='neg_mean_absolute_error',cv=3,n_jobs=-1,verbose=1)
+    st.write(scores)
     
     
     
