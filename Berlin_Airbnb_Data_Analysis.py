@@ -434,7 +434,7 @@ def main():
     
     st.write("""
              - Our model prediction improved by 11% from $35 error margin to $31
-             - R2 also improved by 26% from 46 to 58 and hence our model is better at explaining the variability in the data
+             - R2 also improved by 26% from 46% to 58% and hence our model is better at explaining the variability in the data
              """)
     predicted_df = pd.DataFrame(y_pred,columns=['predicted'])
     y_test = y_test.reset_index(drop=True)
