@@ -443,8 +443,8 @@ def main():
         actual_v_predictions_df.head(10))
     
     # check model score
-    scores = cross_val_score(hyper_model,X_test,y_test,scoring='neg_mean_absolute_error',cv=3,n_jobs=-1,verbose=1)
-    st.write(scores)
+    # scores = cross_val_score(hyper_model,X_test,y_test,scoring='neg_mean_absolute_error',cv=3,n_jobs=-1,verbose=1)
+    # st.write(scores)
     
     
     
