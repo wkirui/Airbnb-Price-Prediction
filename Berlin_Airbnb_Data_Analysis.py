@@ -284,8 +284,8 @@ def main():
                                       or listings_data_clean[x].dtype==float]
     columns_with_categorical_vals = [x for x in listings_data_clean.columns if listings_data_clean[x].dtype==object]
     
-    st.write(columns_with_int_or_float_vals)
-    st.write(columns_with_categorical_vals)
+    # st.write(columns_with_int_or_float_vals)
+    # st.write(columns_with_categorical_vals)
     
     # drop categorical columns with highest dimension
     # set max at 50 unique values
@@ -362,7 +362,7 @@ def main():
              We will use RandomForestRegression again to train our final model.
              
              """)
-    # prepare data fro modeling
+    # prepare data for modeling
     top_n_features_list = [x for x in top_features_selected_df['feature']][:50]
     X = encoded_listings_data[top_n_features_list]
     y = encoded_listings_data['price']
@@ -378,13 +378,13 @@ def main():
             model = pickle.load(f)
     except:
     # create a model
-        model = RandomForestRegressor(n_estimators =10000,n_jobs=1,random_state=42)
+        model = RandomForestRegressor(verbose=1,n_jobs=-1,random_state=42)
         model.fit(X_train,y_train)
         with open(trained_model_name,'wb') as f:
             pickle.dump(model,f)
     
     # check model
-    st.write(model.get_params())
+    # st.write(model.get_params())
     # make predictions with the model
     y_pred = model.predict(X_test)
 
@@ -439,7 +439,7 @@ def main():
         rf_model = RandomForestRegressor()
         # search using 3 fold cross validation
         rf_random = RandomizedSearchCV(estimator=rf_model,param_distributions=random_grid,
-                                       n_iter=100,cv=3,verbose=2,random_state=42,n_jobs=-1)
+                                       n_iter=50,cv=2,verbose=1,random_state=42,n_jobs=-1)
         # fit the random search
         rf_random.fit(X_train,y_train)
         # open saved model
@@ -448,19 +448,31 @@ def main():
     
     # print random search model
     st.write(rf_random)
+    
     # get best parameters
     st.write(rf_random.best_params_)
     
+    
+    # define hyperparameters
+    n_estimators = rf_random.best_params_['n_estimators']
+    max_depth = rf_random.best_params_['max_depth']
+    min_samples_split = rf_random.best_params_['min_samples_split']
+    min_samples_leaf = rf_random.best_params_['min_samples_leaf']
+    bootstrap = rf_random.best_params_['bootstrap']
+    
     # train the model with hyperparameters
-    hyper_model_name = "trained_models/rf_hypermodel_v1.sav"
+    hyper_model_name = "trained_models/rf_hypermodel_final_v.sav"
     try:
         with open(hyper_model_name,'rb') as f:
             hyper_model = pickle.load(f)
     except:
+        
     # create a model using hyperparameters
-        hyper_model = RandomForestRegressor(n_estimators=334,max_depth=20,
-                                            min_samples_split=2,min_samples_leaf=1,
-                                            bootstrap=False,n_jobs=-1,random_state=42)
+        hyper_model = RandomForestRegressor(n_estimators=n_estimators,max_depth=max_depth,
+                                            min_samples_split=min_samples_split,
+                                            min_samples_leaf=min_samples_leaf,
+                                            bootstrap=bootstrap,verbose=2,
+                                            n_jobs=-1,random_state=42)
         hyper_model.fit(X_train,y_train)
         with open(hyper_model_name,'wb') as f:
             pickle.dump(hyper_model,f)
@@ -580,7 +592,7 @@ def generate_important_features(df):
             model = pickle.load(f)
     except:
         # model the data
-        model = RandomForestRegressor(n_estimators=1000,n_jobs=1)
+        model = RandomForestRegressor(n_estimators=1000,n_jobs=-1)
         model.fit(X_train,y_train)
         # save the model
         with open(saved_features_model,'wb') as f:
@@ -599,7 +611,7 @@ def generate_important_features(df):
     feature_importances_df = feature_importances_df.sort_values('score',ascending=False)
     
     # save features
-    feature_importances_df.to_csv('trained_models/features_importances.csv',index=False)
+    feature_importances_df.to_csv('trained_models/feature_importances.csv',index=False)
 
     # return top features
     return feature_importances_df
