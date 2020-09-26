@@ -203,13 +203,13 @@ def main():
         # Neighbourhood
     st.write("""
         #### d) Neighbourhood
-         - Mitte borough has the most expensive apartments on average ($72) followed by Charlettenburg-Wilmersdof borough ($70)
-         - Reinickendorf apartments are the cheapest ($45)
+         - Charlettenburg-Wilmersdof borough has the most expensive apartments ($81) followed by Mitte ($77) and Pankow ($75) boroughs
+         - Reinickendorf apartments are the cheapest ($50)
         """)
        # calculate price summary
     price_neighbourhood_summary = listings_data_clean.groupby('neighbourhood_group_cleansed')['price'].mean().reset_index()
     price_neighbourhood_summary = price_neighbourhood_summary.sort_values(by='price',ascending=True)
-    # st.write(price_neighbourhood_summary)
+    
     # plot price distribution based on number of bedrooms
     neighbourhood_chart = alt.Chart(price_neighbourhood_summary).mark_bar(interpolate='basis').encode(
     alt.Y('neighbourhood_group_cleansed', title='Neighbourhood',sort=alt.EncodingSortField(field="price", order='descending')),
@@ -223,7 +223,7 @@ def main():
     # st.text("Listings Distribution")
     st.write("""
              ### Map Visualization
-             We can use a map to visualize how these listings are distributed
+             Let's look at appartment listings distribution by borough on a map
              """)
     neighbourhood_group = [x for x in price_neighbourhood_summary['neighbourhood_group_cleansed'].unique()]
     neighbourhood_selection = st.selectbox(
