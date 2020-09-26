@@ -17,7 +17,7 @@ import altair as alt
 from math import radians,cos,sin,asin,sqrt
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split,cross_val_score
-from sklearn.metrics import mean_squared_error
+from sklearn.metrics import mean_squared_error,mean_absolute_error
 import pickle
 from sklearn.model_selection import RandomizedSearchCV
 
@@ -423,10 +423,12 @@ def main():
     # get R^2 score
     model_score = model.score(X_test,y_test)
     mse = mean_squared_error(y_test,y_pred)
+    mae = mean_absolute_error(y_test,y_pred)
     st.write("Model Results:")
     st.write("R-Squared:",round(model_score*100,2))
     st.write("MSE:",round(mse,4))
     st.write("RMSE:",round(mse**(1/2),4))
+    st.write("MAE:",round(mae,4))
     st.write( """
              The model's R^2 score is 42% R^2. This means our model is not performing well at explaining the variability in our dataset.\
                  
@@ -516,11 +518,12 @@ def main():
     # get R^2 score
     model_score = hyper_model.score(X_test,y_test)
     mse = mean_squared_error(y_test,y_pred)
+    mae = mean_absolute_error(y_test,y_pred)
     st.write("Model Results:")
     st.write("R-Squared:",round(model_score*100,2))
     st.write("MSE:",round(mse,4))
     st.write("RMSE:",round(mse**(1/2),4))
-    
+    st.write("MAE:",round(mae,4))
     st.write("""
              - Our model prediction improved by 11% from $35 error margin to $31
              - R2 also improved by 26% from 46% to 58% and hence our model is better at explaining the variability in the data
