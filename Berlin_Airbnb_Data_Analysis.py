@@ -342,18 +342,19 @@ def main():
              Our final model will use features that produced the best score.
              
              """)
-    
-    top_features_selected_df = pd.read_csv("trained_models/feature_importances.csv")
-    
-    if len(top_features_selected_df)==0:
+    # check if we have a saved csv file
+    # if error, generate feature importances
+    try:
+        top_features_selected_df = pd.read_csv("trained_models/feature_importances.csv")
+        st.write("Top 10 Features",
+            top_features_selected_df.head(10))
+    except FileNotFoundError:
         # generate top 10 features
         with st.spinner('Please Hang on ...'):
             top_features_selected_df = generate_important_features(encoded_listings_data)
             st.write(top_features_selected_df.head(10))  
         # notify done
         st.success('Done!')
-    else:
-        pass
 
     # create our model
     st.write("""
