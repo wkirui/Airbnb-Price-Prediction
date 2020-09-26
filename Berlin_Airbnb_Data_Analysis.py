@@ -318,99 +318,32 @@ def main():
     # categorical columns
     for col in columns_with_categorical_vals:
         listings_data_clean[col] = listings_data_clean[col].fillna('unknown')
-        
+     
+    # Encode categorical columns   
     st.write("""
              #### c) Encode categorical columns
             - We use One-Hot Encoding method to encode categorical columns. Specifically we use pandas' **get_dummies** method
-            - The Resulting DataFrame has 537 columns! We definitely need to scale down the number of features.
+            - The resulting DataFrame has 87 columns
             """)
-    
-    
+    # encode values
     encoded_listings_data = pd.get_dummies(listings_data_clean,
                                            columns=columns_with_categorical_vals,
                                            drop_first=True)
-    st.write(encoded_listings_data.shape)
+    st.write(encoded_listings_data.shape,
+             encoded_listings_data.head())
     
-    # st.write(listings_data_clean.head())
-    
-    # st.write(listings_data_clean.head(),
-    #          len(listings_data_clean.dtype==object),
-    #          len(listings_data_clean.dtype==int),
-    #          len(listings_data_clean.dtype==float))
-    
-    # # filter apartments in Germany only
-    # listings_data_clean = listings_data_clean[listings_data_clean['country_code']=='DE']
-    
-    #  let's define columns to use
-    # create list of potential features
-    working_list = ['id','host_is_superhost',
-                    'host_neighbourhood', 'host_listings_count', 'host_total_listings_count',
-                    'host_identity_verified', 'neighbourhood_cleansed',
-                    'neighbourhood_group_cleansed', 'city', 'state',
-                    'latitude', 'longitude', 'is_location_exact', 'property_type',
-                    'room_type', 'accommodates', 'bathrooms', 'bedrooms', 'beds', 'bed_type',
-                    'price', 'guests_included', 'extra_people', 'minimum_nights', 'maximum_nights',
-                    'minimum_minimum_nights', 'maximum_minimum_nights', 'minimum_maximum_nights', 
-                    'maximum_maximum_nights', 'minimum_nights_avg_ntm', 'maximum_nights_avg_ntm',
-                    'has_availability', 'availability_30', 'availability_60', 
-                    'availability_90', 'availability_365', 'number_of_reviews',
-                    'number_of_reviews_ltm','review_scores_rating', 
-                    'review_scores_accuracy','review_scores_cleanliness', 'review_scores_checkin',
-                    'review_scores_communication', 'review_scores_location', 'review_scores_value', 
-                    'requires_license', 'instant_bookable', 'is_business_travel_ready', 'cancellation_policy',
-                    'require_guest_profile_picture', 'require_guest_phone_verification',
-                    'calculated_host_listings_count', 'calculated_host_listings_count_entire_homes', 
-                    'calculated_host_listings_count_private_rooms', 'calculated_host_listings_count_shared_rooms',
-                    'reviews_per_month', 'distance']
-    # select only columns in our list
-    listings_data_clean = listings_data_clean[working_list]
-    st.write("- We then select the following 57 columns that potentially affect the airbnb prices",
-        listings_data_clean.head())
-    
-    # encode categorical columns
-    st.write("""
-             - Next we encode columns with categorical columns using One-Hot Encoding method. Specifically using pandas' **get_dummies** method
-             - The Resulting DataFrame has 537 columns! We definitely need to scale down the number of features.
-             """)
-    # define columns to encode
-    columns_to_encode = ['host_neighbourhood','host_is_superhost','host_identity_verified','is_location_exact','neighbourhood_cleansed','neighbourhood_group_cleansed', 'city','state',
-                    'property_type','room_type','bed_type','requires_license','has_availability',
-                     'instant_bookable', 'is_business_travel_ready', 'cancellation_policy',
-                     'require_guest_profile_picture', 'require_guest_phone_verification']
-    # encode selected columns
-    encoded_listings_data = pd.get_dummies(listings_data_clean,
-                                       columns=columns_to_encode)
-    st.write(encoded_listings_data.head(8))
-    
-    st.write("""
-             - We also impute missing values for the integer columns their mean values. Basically we calculate the mean values for these columns then we use them to fill the NAs
-             """)
-    # Impute missing values for integer columns
-    listings_int_values_data = encoded_listings_data.iloc[:,1:40]
-    total_vals_missing = listings_int_values_data.isnull().sum()
-    listings_int_values_df = pd.DataFrame({'column_name':listings_int_values_data.columns,
-                            'total_missing_vals':total_vals_missing})
-    listings_int_values_df = listings_int_values_df.reset_index(drop=True).sort_values('total_missing_vals',ascending=False)
-
-    # define list of columns to impute
-    columns_to_impute = [x for x in listings_int_values_df[listings_int_values_df['total_missing_vals']>0]['column_name']]
-
-    # impute missing values with mean
-    # int vals
-    for col in columns_to_impute:
-        mean_val = round(np.mean(encoded_listings_data[col]),1)
-        encoded_listings_data[col] = encoded_listings_data[col].fillna(mean_val)
-    # categorial cols
-    for col in columns_to_impute:
-        mean_val = round(np.mean(encoded_listings_data[col]),1)
-        encoded_listings_data[col] = encoded_listings_data[col].fillna(mean_val)
-    
-    
+    # Feature importance
     st.write(""" 
              ### Feature Importance
-             - After cleaning up the data, the next step is to select the most important features for our model. These are the features that have high influence on the target variable (price)
+             After cleaning up the data, the next step is to select the most important features for our model.
+             These are the features that have high influence on the target variable (price)
+             We train a RandomForest Regression model on our features then select the best features. 
+             Here we iteratively select the top **n** features from the important features list and then train our model using those features.\n
+             Our final model will use features that produced the best score.
+             
              """)
     
+    stop_error
     # generate top 50 features
     with st.spinner('Please Hang on ...'):
         top_features_selected_df = generate_important_features(encoded_listings_data,50)
@@ -442,7 +375,7 @@ def main():
             model = pickle.load(f)
     except:
     # create a model
-        model = RandomForestRegressor(max_depth=5,n_jobs=-1,random_state=42)
+        model = RandomForestRegressor(n_estimators = 10000,n_jobs=-1,random_state=42)
         model.fit(X_train,y_train)
         with open(trained_model_name,'wb') as f:
             pickle.dump(model,f)
@@ -641,7 +574,7 @@ def generate_important_features(df,n):
             model = pickle.load(f)
     except:
         # model the data
-        model = RandomForestRegressor()
+        model = RandomForestRegressor(n_estimators=1000,n_jobs=-1)
         model.fit(X,y)
         # save the model
         with open(saved_features_model,'wb') as f:
