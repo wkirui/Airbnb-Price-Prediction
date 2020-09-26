@@ -332,6 +332,9 @@ def main():
     st.write(encoded_listings_data.shape,
              encoded_listings_data.head())
     
+    # drop apartments without prices
+    encoded_listings_data = encoded_listings_data[encoded_listings_data['price']>0]
+    
     # Feature importance
     st.write(""" 
              ### Feature Importance
@@ -363,6 +366,11 @@ def main():
              
              """)
     # prepare data for modeling
+    # replace outliers with median values
+    # encoded_listings_data['price'] = np.where(encoded_listings_data['price']>encoded_listings_data['price'].quantile(0.95),
+    #                                           np.median(encoded_listings_data['price']),
+    #                                           encoded_listings_data['price'])
+    
     top_n_features_list = [x for x in top_features_selected_df['feature']][:50]
     X = encoded_listings_data[top_n_features_list]
     y = encoded_listings_data['price']
@@ -471,7 +479,7 @@ def main():
         hyper_model = RandomForestRegressor(n_estimators=n_estimators,max_depth=max_depth,
                                             min_samples_split=min_samples_split,
                                             min_samples_leaf=min_samples_leaf,
-                                            bootstrap=bootstrap,verbose=2,
+                                            bootstrap=bootstrap,verbose=1,
                                             n_jobs=-1,random_state=42)
         hyper_model.fit(X_train,y_train)
         with open(hyper_model_name,'wb') as f:
