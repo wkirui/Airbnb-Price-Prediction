@@ -218,7 +218,7 @@ def main():
         width = 700,height= 400,
         title='Average Prices by Neighbourhood')
     st.altair_chart(neighbourhood_chart)
-    
+        
     # generate total listings by neighbourhood
     # st.write(listings_data_clean['neighbourhood_group_cleansed'].value_counts().reset_index())
     
@@ -241,28 +241,104 @@ def main():
     # feature selection
     st.write("""
              ### Feature Selection
+             #### a) Calculate missing values
              In this section we select the best features to work with in our model
               - First we calculate the percentage of missing values in each column
-              - Then we drop features with mode than 30% missing values
-              - We have 21 columns in this category which include: 
-                  
-                  - 'interaction', 'host_about', 
-                  'neighborhood_overview', 'transit','security_deposit', 'host_acceptance_rate',
-                  'space', 'cleaning_fee'
+              - We will drop features with more than 50% missing values. There are only 5 columns
+              
              """)
     # listings_data_clean = drop_columns_with_missing_vals(listings_data_clean)
     
     # columns with missing values
-    columns_with_missing_values = listings_data_clean.isnull().sum().rename('total').reset_index().sort_values(by='total',ascending=False)
-    columns_with_missing_values.columns =['feature','total']
-    columns_with_missing_values['pct_missing_values'] = round(columns_with_missing_values['total']/len(listings_data_clean)*100,1)
-    columns_to_drop = columns_with_missing_values[columns_with_missing_values['pct_missing_values']>70]['feature']
-    st.write(len(columns_to_drop))
-    st.write(columns_to_drop)
-    # drop columns with more than 30% missing values
+    # columns_with_missing_values = listings_data_clean.isnull().sum().rename('total').reset_index().sort_values(by='total',ascending=False)
+    # columns_with_missing_values.columns =['feature','total']
+    # columns_with_missing_values['pct_missing_values'] = round(columns_with_missing_values['total']/len(listings_data_clean)*100,1)
+    # columns_to_drop = columns_with_missing_values[columns_with_missing_values['pct_missing_values']>50]['feature']
+    # st.write(len(columns_to_drop))
+    # st.write(columns_to_drop)
+    
+    # drop columns with more than 50% missing values
+    # listings_data_clean = drop_columns_with_missing_vals(listings_data_clean)
+    
+    # clean up percent columns
+    pct_cols = ['host_acceptance_rate','host_response_rate']
+    for col in pct_cols:
+        listings_data_clean[col] = listings_data_clean[col].str.replace('%','')
+        listings_data_clean[col] = pd.to_numeric(listings_data_clean[col],errors='coerce')
+        
+    # st.write(listings_data_clean[['host_acceptance_rate','host_response_rate']].head(10))
+    # st.write(listings_data_clean[['host_acceptance_rate','host_response_rate']].isnull().sum())
+    
+    # drop columns with more than 50% missing values
     listings_data_clean = drop_columns_with_missing_vals(listings_data_clean)
     
-    # filter apartments in Germany only
+        # drop some specific columns
+    listings_data_clean = listings_data_clean.drop(['scrape_id','host_id','last_scraped','calendar_last_scraped'],axis=1)
+    
+    # clean up host acceptance rate
+    # listings_data_clean['host_acceptance_rate'] = listings_data_clean['host_acceptance_rate'].astype(int,errors='ignore')
+    # st.write(listings_data_clean['host_acceptance_rate'].unique())
+    #check data info
+    # separate columns with integer & object values
+    columns_with_int_or_float_vals = [x for x in listings_data_clean.columns if listings_data_clean[x].dtype==int
+                                      or listings_data_clean[x].dtype==float]
+    columns_with_categorical_vals = [x for x in listings_data_clean.columns if listings_data_clean[x].dtype==object]
+    
+    st.write(columns_with_int_or_float_vals)
+    st.write(columns_with_categorical_vals)
+    
+    # drop categorical columns with highest dimension
+    # set max at 50 unique values
+    high_dimension_columns = []
+    for i in columns_with_categorical_vals:
+        if listings_data_clean[i].nunique()>50:
+            high_dimension_columns.append(i)
+    st.write(high_dimension_columns)
+    # drop high dimension columns
+    listings_data_clean = listings_data_clean.drop(high_dimension_columns,axis=1)
+    
+    # update categorical columns list
+    columns_with_categorical_vals = [x for x in listings_data_clean.columns if listings_data_clean[x].dtype==object]
+    
+    
+    # impute columns
+    st.write(
+        """
+        #### b) Impute missing values
+          - Calculate median for each of the integer columns and use it to fill the missing values
+          - Use 'unknown' to fill missing values in columns with categorical values
+        """
+    )
+    # Impute missing values
+    # int/float columns
+    for col in columns_with_int_or_float_vals:
+        if col != 'id':
+            median_val = np.round(np.median(listings_data_clean[listings_data_clean[col].isnull()==False][col]),0)
+            listings_data_clean[col] = listings_data_clean[col].fillna(median_val)
+    # categorical columns
+    for col in columns_with_categorical_vals:
+        listings_data_clean[col] = listings_data_clean[col].fillna('unknown')
+        
+    st.write("""
+             #### c) Encode categorical columns
+            - We use One-Hot Encoding method to encode categorical columns. Specifically we use pandas' **get_dummies** method
+            - The Resulting DataFrame has 537 columns! We definitely need to scale down the number of features.
+            """)
+    
+    
+    encoded_listings_data = pd.get_dummies(listings_data_clean,
+                                           columns=columns_with_categorical_vals,
+                                           drop_first=True)
+    st.write(encoded_listings_data.shape)
+    
+    # st.write(listings_data_clean.head())
+    
+    # st.write(listings_data_clean.head(),
+    #          len(listings_data_clean.dtype==object),
+    #          len(listings_data_clean.dtype==int),
+    #          len(listings_data_clean.dtype==float))
+    
+    # # filter apartments in Germany only
     # listings_data_clean = listings_data_clean[listings_data_clean['country_code']=='DE']
     
     #  let's define columns to use
@@ -320,9 +396,15 @@ def main():
     columns_to_impute = [x for x in listings_int_values_df[listings_int_values_df['total_missing_vals']>0]['column_name']]
 
     # impute missing values with mean
+    # int vals
     for col in columns_to_impute:
         mean_val = round(np.mean(encoded_listings_data[col]),1)
         encoded_listings_data[col] = encoded_listings_data[col].fillna(mean_val)
+    # categorial cols
+    for col in columns_to_impute:
+        mean_val = round(np.mean(encoded_listings_data[col]),1)
+        encoded_listings_data[col] = encoded_listings_data[col].fillna(mean_val)
+    
     
     st.write(""" 
              ### Feature Importance
