@@ -343,20 +343,22 @@ def main():
              
              """)
     
-    stop_error
-    # generate top 10 features
-    with st.spinner('Please Hang on ...'):
-        top_features_selected_df = generate_important_features(encoded_listings_data)
-        st.write(top_features_selected_df.head(10))  
-    # st.balloons()
-    st.success('Done!')
-    # 
+    top_features_selected_df = pd.read_csv("trained_models/feature_importances.csv")
+    
+    if len(top_features_selected_df)==0:
+        # generate top 10 features
+        with st.spinner('Please Hang on ...'):
+            top_features_selected_df = generate_important_features(encoded_listings_data)
+            st.write(top_features_selected_df.head(10))  
+        # notify done
+        st.success('Done!')
+    else:
+        pass
 
     # create our model
     st.write("""
              ### Modeling
-             With our selected features, we can now go ahead and train the model. 
-             We will use RandomForestRegressor for our baseline model
+             We will use RandomForestRegression again to train our final model.
              
              """)
     # prepare data fro modeling
