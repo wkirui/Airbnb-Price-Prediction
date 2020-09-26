@@ -336,18 +336,18 @@ def main():
     st.write(""" 
              ### Feature Importance
              After cleaning up the data, the next step is to select the most important features for our model.
-             These are the features that have high influence on the target variable (price)
-             We train a RandomForest Regression model on our features then select the best features. 
-             Here we iteratively select the top **n** features from the important features list and then train our model using those features.\n
+             These are the features that have high influence on the target variable (price).
+             
+             We train a RandomForest Regression model on our features then we select the best features by iteratively training our model on the top **n** features from the important features list.
              Our final model will use features that produced the best score.
              
              """)
     
     stop_error
-    # generate top 50 features
+    # generate top 10 features
     with st.spinner('Please Hang on ...'):
-        top_features_selected_df = generate_important_features(encoded_listings_data,50)
-        st.write(top_features_selected_df)  
+        top_features_selected_df = generate_important_features(encoded_listings_data)
+        st.write(top_features_selected_df.head(10))  
     # st.balloons()
     st.success('Done!')
     # 
@@ -360,7 +360,7 @@ def main():
              
              """)
     # prepare data fro modeling
-    top_n_features_list = [x for x in top_features_selected_df['feature']]
+    top_n_features_list = [x for x in top_features_selected_df['feature']][:50]
     X = encoded_listings_data[top_n_features_list]
     y = encoded_listings_data['price']
 
@@ -375,7 +375,7 @@ def main():
             model = pickle.load(f)
     except:
     # create a model
-        model = RandomForestRegressor(n_estimators = 10000,n_jobs=-1,random_state=42)
+        model = RandomForestRegressor(n_estimators =10000,n_jobs=1,random_state=42)
         model.fit(X_train,y_train)
         with open(trained_model_name,'wb') as f:
             pickle.dump(model,f)
@@ -555,16 +555,19 @@ def drop_columns_with_missing_vals(df):
 
 # define feature importance calculation function
 @st.cache
-def generate_important_features(df,n):
+def generate_important_features(df):
     """
     df: dataframe
-    n: number of features to select
+    return: feature importances
     """
     # Create model using randomregressor
 
     # prepare data for modeling
     X = df.drop(['id','price'],axis=1)
     y = df['price']
+    
+    # split the data
+    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.3,random_state=42)
     
     # load or create a model
     saved_features_model = "trained_models/rf_features_model_v1.sav"
@@ -574,15 +577,15 @@ def generate_important_features(df,n):
             model = pickle.load(f)
     except:
         # model the data
-        model = RandomForestRegressor(n_estimators=1000,n_jobs=-1)
-        model.fit(X,y)
+        model = RandomForestRegressor(n_estimators=1000,n_jobs=1)
+        model.fit(X_train,y_train)
         # save the model
         with open(saved_features_model,'wb') as f:
             pickle.dump(model,f)
 
     # get feature importance
     feat_importances = model.feature_importances_
-    col_list = [x for x in X.columns]
+    col_list = [x for x in X_train.columns]
     feat_list = {}
     for i,v in enumerate(feat_importances):
     #     print("Feature: %0d, Score: %.5f" %(i,v))
@@ -591,13 +594,12 @@ def generate_important_features(df,n):
     # create feature importance dataframe
     feature_importances_df = pd.DataFrame(feat_list.items(),columns=['feature','score'])
     feature_importances_df = feature_importances_df.sort_values('score',ascending=False)
+    
+    # save features
+    feature_importances_df.to_csv('trained_models/features_importances.csv',index=False)
 
-    # create a list of top 50 features
-    top_n_features_list = [x for x in feature_importances_df[:n]['feature']]
-
-    top_n_features_df = feature_importances_df[0:n]
-
-    return top_n_features_df
+    # return top features
+    return feature_importances_df
 
 
 if __name__ == "__main__":
