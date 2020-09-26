@@ -24,8 +24,11 @@ from sklearn.model_selection import RandomizedSearchCV
 # instantiate app
 def main():
     st.write("""
-             ## Welcome to Berlin Airbnb Data Analysis
-             This app uses data from the [**Inside Airbnb Project**](http://insideairbnb.com/)
+             ## Airbnb Data Analysis
+             
+             In this analysis, I look at airbnb apartment prices in Berlin, Germany. 
+             Airbnb data for most cities and towns around the world is made publicly 
+             available through [**Inside Airbnb**](http://insideairbnb.com/) project.
              """)
      # check top 10 rows of the data
     listings_data = load_data()
@@ -49,7 +52,10 @@ def main():
     price_cols = ['price','weekly_price','monthly_price','extra_people',
                   'security_deposit','cleaning_fee']
     for col in price_cols:
-        listings_data_clean = clean_prices_column(listings_data,col)
+        try:
+            listings_data_clean = clean_prices_column(listings_data,col)
+        except KeyError:
+            pass
     
     # plot price distribution
     price_dist_sum = listings_data_clean.groupby('price')['id'].count().rename('total').reset_index().sort_values(by='price',ascending=True)
@@ -68,25 +74,29 @@ def main():
         width = 700,height= 400,
         title='Price Distribution')
     st.altair_chart(line_chart)
+    st.write("Here is the quick summary of the prices distribution")
+    st.write(prices_dist)
     st.write("""
-             We can make the following observations from the price distribution:
-             - The average cost of renting an apartment is $74
-             - Prices range from $0 to $9000
-             - There are some apartments that do not have their prices indicated
-             - 75% of the listings cost $75 or less
+             - The average cost of renting an apartment is $68 per day
+             - Prices range from $0 to 8000
+             - 75% of the listings cost $50 or less
              - 5% of the listings cost more than the 95th percentile ($155)
-             - 0.5% (129) of the listings cost more than $500
-             
-             As shown in this summary
+             - 0.3% (70) of the listings cost more than $500
              
              """)
-    st.write(prices_dist)
+    
     # # prices greater than 95th percentile
     # median_price = listings_data_clean['price'].quantile(0.5)
-    # outlier_list = listings_data_clean['price'].quantile(0.95)
-    # outlier_df = listings_data_clean[listings_data_clean['price']>400]
-    # st.write("Median Price",median_price,"95th Percentile:",outlier_list,"Above 95th Percentile:",len(outlier_df))
-    # st.write(outlier_df.head(15))
+    # pct_95 = listings_data_clean['price'].quantile(0.95)
+    # outlier_df = listings_data_clean[listings_data_clean['price']>pct_95]
+    # more_than_500_df = listings_data_clean[listings_data_clean['price']>500]
+    
+    # st.write("Median Price",median_price,
+    #          "95th Percentile:",pct_95,
+    #          "Above 95th Percentile:",len(outlier_df),round(len(outlier_df)/len(listings_data_clean)*100,3),
+    #          "Above $500:",len(more_than_500_df),round(len(more_than_500_df)/len(listings_data_clean)*100,3)
+    #          )
+    
     
     # let's see how this changes if we replace outliers with median prices
     st.write("""
