@@ -293,7 +293,7 @@ def main():
     for i in columns_with_categorical_vals:
         if listings_data_clean[i].nunique()>50:
             high_dimension_columns.append(i)
-    st.write(high_dimension_columns)
+    # st.write(high_dimension_columns)
     # drop high dimension columns
     listings_data_clean = listings_data_clean.drop(high_dimension_columns,axis=1)
     
@@ -371,13 +371,37 @@ def main():
     #                                           np.median(encoded_listings_data['price']),
     #                                           encoded_listings_data['price'])
     
-    top_n_features_list = [x for x in top_features_selected_df['feature']][:50]
+    # try different set of features
+    # features_scores = {}
+    # for i in range(1,len(top_features_selected_df['feature'])+1):
+        
+    #     top_n_features_list = [x for x in top_features_selected_df['feature'][:i]]
+    #     X = encoded_listings_data[top_n_features_list]
+    #     y = encoded_listings_data['price']
+
+    #     # split data into train and test
+    #     X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.3,random_state=42)
+    #     best_features_model = RandomForestRegressor(verbose=1,n_jobs=-1,random_state=42)
+    #     best_features_model.fit(X_train,y_train)
+    #     # check performance
+    #     y_pred = best_features_model.predict(X_test)
+    #     mse = mean_squared_error(y_test,y_pred)
+    #     rmse = mse**(1/2)
+    #     features_scores[i] = rmse
+    
+    # create features scores df
+    # features_score_df = pd.DataFrame(features_scores.items(),columns=['number_of_features','rmse'])
+    # features_score_df = features_score_df.sort_values(by='rmse',ascending=False)
+    # st.write(features_score_df)
+    
+    n = 29
+    top_n_features_list = [x for x in top_features_selected_df['feature'][:n]]
     X = encoded_listings_data[top_n_features_list]
     y = encoded_listings_data['price']
 
     # split data into train and test
-    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)
-    
+    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.3,random_state=42)
+        
     # load saved model or create one
     # create model name
     trained_model_name = "trained_models/rf_model_v1.sav"
@@ -386,7 +410,7 @@ def main():
             model = pickle.load(f)
     except:
     # create a model
-        model = RandomForestRegressor(verbose=1,n_jobs=-1,random_state=42)
+        model = RandomForestRegressor(verbose=0,n_jobs=-1,random_state=42)
         model.fit(X_train,y_train)
         with open(trained_model_name,'wb') as f:
             pickle.dump(model,f)
@@ -418,7 +442,7 @@ def main():
     
     # hyperparameter tuning
      # define parameters to optimize
-    n_estimators = [int(x) for x in np.linspace(start=50,stop=500,num=20)]
+    n_estimators = [int(x) for x in np.linspace(start=50,stop=500,num=50)]
     max_features = ['auto','sqrt']
     max_depth = [int(x) for x in np.linspace(10,110,num=11)]
     max_depth.append(None)
@@ -447,7 +471,7 @@ def main():
         rf_model = RandomForestRegressor()
         # search using 3 fold cross validation
         rf_random = RandomizedSearchCV(estimator=rf_model,param_distributions=random_grid,
-                                       n_iter=50,cv=2,verbose=1,random_state=42,n_jobs=-1)
+                                       n_iter=50,cv=2,verbose=0,random_state=42,n_jobs=-1)
         # fit the random search
         rf_random.fit(X_train,y_train)
         # open saved model
@@ -469,7 +493,7 @@ def main():
     bootstrap = rf_random.best_params_['bootstrap']
     
     # train the model with hyperparameters
-    hyper_model_name = "trained_models/rf_hypermodel_final_v.sav"
+    hyper_model_name = "trained_models/rf_hypermodel_final_v1.sav"
     try:
         with open(hyper_model_name,'rb') as f:
             hyper_model = pickle.load(f)
@@ -479,7 +503,7 @@ def main():
         hyper_model = RandomForestRegressor(n_estimators=n_estimators,max_depth=max_depth,
                                             min_samples_split=min_samples_split,
                                             min_samples_leaf=min_samples_leaf,
-                                            bootstrap=bootstrap,verbose=1,
+                                            bootstrap=bootstrap,verbose=0,
                                             n_jobs=-1,random_state=42)
         hyper_model.fit(X_train,y_train)
         with open(hyper_model_name,'wb') as f:
@@ -600,7 +624,7 @@ def generate_important_features(df):
             model = pickle.load(f)
     except:
         # model the data
-        model = RandomForestRegressor(n_estimators=1000,n_jobs=-1)
+        model = RandomForestRegressor(n_estimators=500,n_jobs=-1)
         model.fit(X_train,y_train)
         # save the model
         with open(saved_features_model,'wb') as f:
