@@ -250,11 +250,18 @@ def main():
                   'neighborhood_overview', 'transit','security_deposit', 'host_acceptance_rate',
                   'space', 'cleaning_fee'
              """)
+    # columns with missing values
+    columns_with_missing_values = listings_data_clean.isnull().sum().rename('total').reset_index().sort_values(by='total',ascending=False)
+    columns_with_missing_values.columns =['features','total']
+    columns_with_missing_values['pct_missing_values'] = round(columns_with_missing_values['total']/len(listings_data_clean)*100,1)
+    st.write(columns_with_missing_values.head())
+    columns_to_drop = columns_with_missing_values[columns_with_missing_values['pct_missing_values']>30]['features   ']
+    st.write(columns_to_drop)
     # drop columns with more than 30% missing values
     listings_data_clean = drop_columns_with_missing_vals(listings_data_clean)
     
     # filter apartments in Germany only
-    listings_data_clean = listings_data_clean[listings_data_clean['country_code']=='DE']
+    # listings_data_clean = listings_data_clean[listings_data_clean['country_code']=='DE']
     
     #  let's define columns to use
     # create list of potential features
