@@ -250,12 +250,14 @@ def main():
                   'neighborhood_overview', 'transit','security_deposit', 'host_acceptance_rate',
                   'space', 'cleaning_fee'
              """)
+    # listings_data_clean = drop_columns_with_missing_vals(listings_data_clean)
+    
     # columns with missing values
     columns_with_missing_values = listings_data_clean.isnull().sum().rename('total').reset_index().sort_values(by='total',ascending=False)
-    columns_with_missing_values.columns =['features','total']
+    columns_with_missing_values.columns =['feature','total']
     columns_with_missing_values['pct_missing_values'] = round(columns_with_missing_values['total']/len(listings_data_clean)*100,1)
-    st.write(columns_with_missing_values.head())
-    columns_to_drop = columns_with_missing_values[columns_with_missing_values['pct_missing_values']>30]['features   ']
+    columns_to_drop = columns_with_missing_values[columns_with_missing_values['pct_missing_values']>70]['feature']
+    st.write(len(columns_to_drop))
     st.write(columns_to_drop)
     # drop columns with more than 30% missing values
     listings_data_clean = drop_columns_with_missing_vals(listings_data_clean)
@@ -531,8 +533,8 @@ def drop_columns_with_missing_vals(df):
     # sort by % of missing values
     percent_missing_values = percent_missing_values.sort_values(by='%_missing_values',ascending=False)
     # print(len(percent_missing_values[percent_missing_values['%_missing_values']>30]))
-    columns_missing_more_than_30_pct_vals = [x for x in percent_missing_values[percent_missing_values['%_missing_values']>30]['column_name']]
-    df = df.drop(columns_missing_more_than_30_pct_vals,axis=1)
+    columns_missing_more_than_50_pct_vals = [x for x in percent_missing_values[percent_missing_values['%_missing_values']>50]['column_name']]
+    df = df.drop(columns_missing_more_than_50_pct_vals,axis=1)
     
     return df
 
