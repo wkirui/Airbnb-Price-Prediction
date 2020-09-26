@@ -97,20 +97,21 @@ def main():
     #          "Above $500:",len(more_than_500_df),round(len(more_than_500_df)/len(listings_data_clean)*100,3)
     #          )
     
+    # st.write(more_than_500_df.head(10))
     
     # let's see how this changes if we replace outliers with median prices
-    st.write("""
-             For this Analysis, we will cap the prices at $500.\
-            In order to do so, we replace prices that are more than $500 with the median price which is $50
-            """)
-    listings_data_clean = listings_data_clean.copy()
-    listings_data_clean = listings_data_clean[(listings_data_clean['price']>0) & (listings_data_clean['price']<=500)]
-    # listings_data_clean['price'] = np.where(listings_data_clean['price']>500,50,listings_data_clean['price'])
-    prices_dist_trim = pd.DataFrame(listings_data_clean['price'].describe())
-    prices_dist_trim = prices_dist_trim.reset_index()
-    prices_dist_trim.columns = ['statistic','value']
-    st.write(prices_dist_trim,
-             "- Note that the standard deviation went down from 229 to 63 which means we now have less variability in the data")
+    # st.write("""
+    #          For this Analysis, we will cap the prices at $500.\
+    #         In order to do so, we replace prices that are more than $500 with the median price which is $50
+    #         """)
+    # listings_data_clean = listings_data_clean.copy()
+    # listings_data_clean = listings_data_clean[(listings_data_clean['price']>0) & (listings_data_clean['price']<=500)]
+    # # listings_data_clean['price'] = np.where(listings_data_clean['price']>500,50,listings_data_clean['price'])
+    # prices_dist_trim = pd.DataFrame(listings_data_clean['price'].describe())
+    # prices_dist_trim = prices_dist_trim.reset_index()
+    # prices_dist_trim.columns = ['statistic','value']
+    # st.write(prices_dist_trim,
+    #          "- Note that the standard deviation went down from 229 to 63 which means we now have less variability in the data")
     
     # # calculate log of price
     # st.write("### Log of Prices")
@@ -131,8 +132,10 @@ def main():
     listings_data_clean = calculate_distance_from_city_center(listings_data_clean,'latitude','longitude')
     
     # calculate price summary
-    price_distance_summary = listings_data_clean.groupby('distance')['price'].mean().reset_index()
-    
+    # limit max prices to $500
+    price_distance_summary = listings_data_clean[listings_data_clean['price']<500].groupby('distance')['price'].median().reset_index()
+    price_distance_summary['price'] = np.round(price_distance_summary['price'],0)
+    price_distance_summary['distance'] = np.round(price_distance_summary['distance'],1)
     # plot price distribution based on distance from city center
     distance_chart = alt.Chart(price_distance_summary).mark_line(interpolate='basis').encode(
     alt.X('distance', title='Distance (km)'),
@@ -145,10 +148,11 @@ def main():
     # bedrooms
     st.write("""
             #### b) Number of bedrooms
-             - Apartments with more bedrooms are more expensive
+             - Apartments with more bedrooms cost more than those with fewer bedrooms on average
              """)
        # calculate price summary
     price_bedrooms_summary = listings_data_clean.groupby('bedrooms')['price'].mean().reset_index()
+    # price_bedrooms_summary['price'] = price_bedrooms_summary['price'].astype(int) 
     
     # plot price distribution based on number of bedrooms
     num_bedrooms_chart = alt.Chart(price_bedrooms_summary).mark_line(interpolate='basis').encode(
@@ -158,12 +162,13 @@ def main():
         width = 700,height= 400,
         title='Average Prices by Number of Bedrooms')
     st.altair_chart(num_bedrooms_chart)
+    # st.write(price_bedrooms_summary['bedrooms'].unique())
     
     # room type
     st.write("""
             #### c) Room Type
-            - Private rooms are cheaper
-            - Hotel rooms cost up to 3 times more than other type of apartments
+            - Shared rooms are cheaper on average
+            - Hotel rooms cost up to 3 times more than private rooms
              """)
        # calculate price summary
     price_room_type_summary = listings_data_clean.groupby('room_type')['price'].mean().reset_index()
@@ -181,7 +186,7 @@ def main():
     # Review Score
     st.write("""
              #### d) Review Score
-              - Apartments with high review scores are cheaper on average
+              - There is no clear relationship between prices and review scores
              """)
        # calculate price summary
     price_review_summary = listings_data_clean.groupby('review_scores_rating')['price'].mean().reset_index()
@@ -194,7 +199,7 @@ def main():
         width = 700,height= 400,
         title='Average Prices by Review Rating')
     st.altair_chart(review_score_chart)
-    
+    # st.write(price_review_summary.head())
         # Neighbourhood
     st.write("""
         #### d) Neighbourhood
