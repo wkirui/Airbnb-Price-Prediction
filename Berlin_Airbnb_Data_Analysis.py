@@ -362,7 +362,8 @@ def main():
     # create our model
     st.write("""
              ### Modeling
-             We will use RandomForestRegression again to train our final model.
+             We will train our model using RandomForest Regression. Price is a continuous variable and hence we need a regression algorithm
+             to make our prediction. If we're not satisfied with the results of this algorithm, we can try other algorithms such as XGBoost for performance comparison.
              
              """)
     # prepare data for modeling
@@ -419,6 +420,8 @@ def main():
     # st.write(model.get_params())
     # make predictions with the model
     y_pred = model.predict(X_test)
+    scores = cross_val_score(model,X_test,y_test,scoring='r2')
+    st.write(scores)
 
     # get R^2 score
     model_score = model.score(X_test,y_test)
@@ -430,21 +433,23 @@ def main():
     st.write("RMSE:",round(mse**(1/2),4))
     st.write("MAE:",round(mae,4))
     st.write( """
-             The model's R^2 score is 42% R^2. This means our model is not performing well at explaining the variability in our dataset.\
+             The model's $R^2$ score is 3%. This means our model is performing poorly at explaining the variability in our dataset.\
                  
-             The root mean squared error is 37.7 which means e have a $37 difference between our predicted prices and the actual prices which we can further minimize in order to improve our model.
+             The root mean squared error is also  149.3 which means that we have a $149 error between our predicted prices and the actual prices! This is quite high and can possibly be explained by the big outliers in our prices.
+             The MAE of 28.2 is however lower and we can use it to explain the performance of our model. Mean absolute error is not affected by outliers in the data.
+             
+             Below are the top 10 predictions from our model
              """)
     
     # Let's look at top predictions from our model
     predicted_df = pd.DataFrame(y_pred,columns=['predicted'])
     y_test = y_test.reset_index(drop=True)
     actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
-    st.write("Here are the top prediction results",
-        actual_v_predictions_df.head(10))
+    st.write(actual_v_predictions_df.head(10))
     
     # hyperparameter tuning
      # define parameters to optimize
-    n_estimators = [int(x) for x in np.linspace(start=50,stop=500,num=50)]
+    n_estimators = [int(x) for x in np.linspace(start=200,stop=2000,num=10)]
     max_features = ['auto','sqrt']
     max_depth = [int(x) for x in np.linspace(10,110,num=11)]
     max_depth.append(None)
@@ -480,12 +485,28 @@ def main():
         with open(hyperparam_model,'wb') as f:
             pickle.dump(rf_random,f)
     
+    # hyperparameter tuning
+    st.write("""
+             #### Hyperparameter Tuning
+             Our model did not perform optimally as expected. Let's use RandomSearchCV to find the best parameters that we can use to improve the performance of our model.
+             
+             These are the parameters to optimize for our model:
+             - number of estimators
+             - max depth
+             - min samples split
+             - min samples leaf
+             - bootstrap
+             
+             We will use the following algorithm
+             """)
     # print random search model
     st.write(rf_random)
     
     # get best parameters
+    st.write("Running the algorithm above we get the following results")
     st.write(rf_random.best_params_)
     
+    st.write("Let's retrain our model using the parameters above and compare the results with our first model")
     
     # define hyperparameters
     n_estimators = rf_random.best_params_['n_estimators']
@@ -525,14 +546,15 @@ def main():
     st.write("RMSE:",round(mse**(1/2),4))
     st.write("MAE:",round(mae,4))
     st.write("""
-             - Our model prediction improved by 11% from $35 error margin to $31
-             - R2 also improved by 26% from 46% to 58% and hence our model is better at explaining the variability in the data
+             - Our RMSE went up by 5% from 149 to 157
+             - $R^2$ also decreased from 3% to -7%  and the MAE increased from 28 to 34
+             
+             This doesn't look great. Let's see the top predictions using the new model
              """)
     predicted_df = pd.DataFrame(y_pred,columns=['predicted'])
     y_test = y_test.reset_index(drop=True)
     actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
-    st.write("Here are the top prediction results from the hyperparameter model",
-        actual_v_predictions_df.head(10))
+    st.write(actual_v_predictions_df.head(10))
     
     # check model score
     # scores = cross_val_score(hyper_model,X_test,y_test,scoring='neg_mean_absolute_error',cv=3,n_jobs=-1,verbose=1)
@@ -588,7 +610,7 @@ def drop_columns_with_missing_vals(df):
     """
     @df: dataframe\
         
-    drops columns with 30% missing values
+    drops columns with 50% missing values
     """
     percent_missing_values = round((df.isnull().sum()/len(df))*100,2)
     percent_missing_values = pd.DataFrame({"column_name":df.columns,
