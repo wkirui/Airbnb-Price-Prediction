@@ -19,6 +19,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.metrics import mean_squared_error,mean_absolute_error
 import pickle
+import json
 from sklearn.model_selection import RandomizedSearchCV
 
 # instantiate app
@@ -291,7 +292,7 @@ def main():
     # set max at 50 unique values
     high_dimension_columns = []
     for i in columns_with_categorical_vals:
-        if listings_data_clean[i].nunique()>50:
+        if listings_data_clean[i].nunique()>200:
             high_dimension_columns.append(i)
     # st.write(high_dimension_columns)
     # drop high dimension columns
@@ -401,7 +402,7 @@ def main():
     # features_score_df = features_score_df.sort_values(by='rmse',ascending=False)
     # st.write(features_score_df)
     
-    n = 29
+    n = 185
     top_n_features_list = [x for x in top_features_selected_df['feature'][:n]]
     X = encoded_listings_data[top_n_features_list]
     y = encoded_listings_data['price']
@@ -411,10 +412,10 @@ def main():
         
     # load saved model or create one
     # create model name
-    trained_model_name = "trained_models/rf_model_v1.sav"
+    trained_model_name = "trained_models/rf_trained_model_v1.pkl"
     try:
         with open(trained_model_name,'rb') as f:
-            model = pickle.load(f)
+            model = json.loads(f)
     except:
     # create a model
         model = RandomForestRegressor(verbose=0,n_jobs=-1,random_state=42)
@@ -473,12 +474,12 @@ def main():
          'bootstrap': bootstrap
         }
     # load saved model
-    hyperparam_model = "trained_models/rf_hypermodel_v1.sav"
+    hyperparam_model = "trained_models/rf_hypermodel_v1.pkl"
     # load saved mode or
     # train one
     try:
         with open(hyperparam_model,'rb') as f:
-            rf_random = pickle.load(f)
+            rf_random = json.loads(f)
     except:
         # search best parameters
         rf_model = RandomForestRegressor()
@@ -489,7 +490,7 @@ def main():
         rf_random.fit(X_train,y_train)
         # open saved model
         with open(hyperparam_model,'wb') as f:
-            pickle.dump(rf_random,f)
+            json.dumps(rf_random,f,compress=3)
     
     # hyperparameter tuning
     st.write("""
@@ -522,7 +523,7 @@ def main():
     bootstrap = rf_random.best_params_['bootstrap']
     
     # train the model with hyperparameters
-    hyper_model_name = "trained_models/rf_hypermodel_final_v1.sav"
+    hyper_model_name = "trained_models/rf_hypermodel_final_v1.pkl"
     try:
         with open(hyper_model_name,'rb') as f:
             hyper_model = pickle.load(f)
