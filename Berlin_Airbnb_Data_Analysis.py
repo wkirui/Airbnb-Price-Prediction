@@ -19,7 +19,7 @@ from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split,cross_val_score
 from sklearn.metrics import mean_squared_error,mean_absolute_error
 import pickle
-import json
+import joblib
 from sklearn.model_selection import RandomizedSearchCV
 
 # instantiate app
@@ -414,18 +414,24 @@ def main():
     # create model name
     trained_model_name = "trained_models/rf_trained_model_v1.pkl"
     try:
-        with open(trained_model_name,'rb') as f:
-            model = json.loads(f)
-    except:
+        # add progress bar
+        with st.spinner("Loading Model..."):
+            # load file
+            with open(trained_model_name,'rb') as f:
+                model = joblib.load(f)
+        st.success('Woop!Woop!')
+    except FileNotFoundError:
     # create a model
         model = RandomForestRegressor(verbose=0,n_jobs=-1,random_state=42)
         model.fit(X_train,y_train)
         with open(trained_model_name,'wb') as f:
-            pickle.dump(model,f)
+            joblib.dump(model,f,compress=3)
     
     # check model
     # st.write(model.get_params())
     # make predictions with the model
+    st.write("Model Predictions...")
+    
     y_pred = model.predict(X_test)
     scores = cross_val_score(model,X_test,y_test,scoring='r2')
     st.write(scores)
@@ -479,13 +485,12 @@ def main():
     # train one
     try:
         # create progress bar to show model loading progress
-        progress_bar = st.progress(0)
-        for i in range(200):
+        with st.spinner('Loading Hyperparameter model...'):
             # load file
             with open(hyperparam_model,'rb') as f:
-                rf_random = json.loads(f)
-            progress_bar.progress(i+1)
-    except:
+                rf_random = joblib.load(f)
+        st.success('Wooooo!')
+    except FileNotFoundError:
         # search best parameters
         rf_model = RandomForestRegressor()
         # search using 3 fold cross validation
@@ -495,7 +500,7 @@ def main():
         rf_random.fit(X_train,y_train)
         # open saved model
         with open(hyperparam_model,'wb') as f:
-            json.dumps(rf_random,f,compress=3)
+            joblib.dump(rf_random,f,compress=3)
     
     # hyperparameter tuning
     st.write("""
@@ -531,8 +536,8 @@ def main():
     hyper_model_name = "trained_models/rf_hypermodel_final_v1.pkl"
     try:
         with open(hyper_model_name,'rb') as f:
-            hyper_model = pickle.load(f)
-    except:
+            hyper_model = joblib.load(f)
+    except FileNotFoundError:
         
     # create a model using hyperparameters
         hyper_model = RandomForestRegressor(n_estimators=n_estimators,max_depth=max_depth,
@@ -542,7 +547,7 @@ def main():
                                             n_jobs=-1,random_state=42)
         hyper_model.fit(X_train,y_train)
         with open(hyper_model_name,'wb') as f:
-            pickle.dump(hyper_model,f)
+            joblib.dump(hyper_model,f,compress=3)
     
     # make predictions with the model
     y_pred = hyper_model.predict(X_test)
