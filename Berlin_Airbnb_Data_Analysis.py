@@ -408,7 +408,7 @@ def main():
     y = encoded_listings_data['price']
 
     # split data into train and test
-    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.3,random_state=42)
+    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.1,random_state=42)
         
     # load saved model or create one
     # create model name
@@ -656,7 +656,7 @@ def generate_important_features(df):
     y = df['price']
     
     # split the data
-    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.3,random_state=42)
+    X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.2,random_state=42)
     
     # load or create a model
     saved_features_model = "trained_models/rf_features_model_v1.sav"
