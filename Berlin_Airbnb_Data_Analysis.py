@@ -335,6 +335,12 @@ def main():
     # drop apartments without prices
     encoded_listings_data = encoded_listings_data[encoded_listings_data['price']>0]
     
+    # let's drop some columns to avoid collinearity
+    drop_cols = ['host_listings_count','latitude','longitude',
+                 'host_total_listings_count','minimum_nights_avg_ntm',
+                 'maximum_nights_avg_ntm']
+    encoded_listings_data = encoded_listings_data.drop(drop_cols,axis=1)
+    
     # Feature importance
     st.write(""" 
              ### Feature Importance
