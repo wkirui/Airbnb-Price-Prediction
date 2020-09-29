@@ -478,8 +478,13 @@ def main():
     # load saved mode or
     # train one
     try:
-        with open(hyperparam_model,'rb') as f:
-            rf_random = json.loads(f)
+        # create progress bar to show model loading progress
+        progress_bar = st.progress(0)
+        for i in range(200):
+            # load file
+            with open(hyperparam_model,'rb') as f:
+                rf_random = json.loads(f)
+            progress_bar.progress(i+1)
     except:
         # search best parameters
         rf_model = RandomForestRegressor()
