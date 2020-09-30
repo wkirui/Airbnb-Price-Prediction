@@ -25,7 +25,7 @@ from sklearn.model_selection import RandomizedSearchCV
 # instantiate app
 def main():
     st.write("""
-             ## Airbnb Data Analysis
+             ## Airbnb Price Prediction
              
              In this analysis, I look at airbnb apartment prices in Berlin, Germany. 
              Airbnb data for most cities and towns around the world is made publicly 
@@ -370,7 +370,8 @@ def main():
     st.write("""
              ### Modeling
              We will train our model using RandomForest Regression. Price is a continuous variable and hence we need a regression algorithm
-             to make our prediction. If we're not satisfied with the results of this algorithm, we can try other algorithms such as XGBoost for performance comparison.
+             to make our prediction.\n
+             If we're not satisfied with the results of this algorithm, we can try other algorithms such as XGBoost for performance comparison.
              
              """)
     # prepare data for modeling
@@ -419,7 +420,7 @@ def main():
             # load file
             with open(trained_model_name,'rb') as f:
                 model = joblib.load(f)
-        st.success('Woop!Woop!')
+        # st.success('Woop!Woop!')
     except FileNotFoundError:
     # create a model
         model = RandomForestRegressor(verbose=0,n_jobs=-1,random_state=42)
@@ -429,12 +430,12 @@ def main():
     
     # check model
     # st.write(model.get_params())
-    # make predictions with the model
-    st.write("Model Predictions...")
     
-    y_pred = model.predict(X_test)
-    scores = cross_val_score(model,X_test,y_test,scoring='r2')
-    st.write(scores)
+    # make predictions with the model
+    with st.spinner("Making Predictions..."):
+        y_pred = model.predict(X_test)
+    # scores = cross_val_score(model,X_test,y_test,scoring='r2')
+    # st.write(scores)
 
     # get R^2 score
     model_score = model.score(X_test,y_test)
@@ -446,10 +447,11 @@ def main():
     st.write("RMSE:",round(mse**(1/2),4))
     st.write("MAE:",round(mae,4))
     st.write( """
-             The model's $R^2$ score is 3%. This means our model is performing poorly at explaining the variability in our dataset.\
+             The model's $R^2$ score is 14%. This means our model is performing poorly at explaining the variability in our dataset.\
                  
-             The root mean squared error is also  149.3 which means that we have a $149 error between our predicted prices and the actual prices! This is quite high and can possibly be explained by the big outliers in our prices.
-             The MAE of 28.2 is however lower and we can use it to explain the performance of our model. Mean absolute error is not affected by outliers in the data.
+             The root mean squared error is also  97.14 which means that we have a $97 error between our predicted prices and the actual prices! This is quite high and can possibly be explained by the big outliers in our prices.
+             
+             The MAE of 23.7 is however lower and we can use it to explain the performance of our model. Mean absolute error is not affected by outliers in the data.
              
              Below are the top 10 predictions from our model
              """)
@@ -489,7 +491,7 @@ def main():
             # load file
             with open(hyperparam_model,'rb') as f:
                 rf_random = joblib.load(f)
-        st.success('Wooooo!')
+        # st.success('Wooooo!')
     except FileNotFoundError:
         # search best parameters
         rf_model = RandomForestRegressor()
@@ -514,7 +516,7 @@ def main():
              - min samples leaf
              - bootstrap
              
-             We will use the following algorithm
+             We will use the following algorithm to find the best parameters for our prediction
              """)
     # print random search model
     st.write(rf_random)
@@ -549,10 +551,12 @@ def main():
         with open(hyper_model_name,'wb') as f:
             joblib.dump(hyper_model,f,compress=3)
     
+    st.write("Here is our model with the hyperparameters",
+             hyper_model)
+    
     # make predictions with the model
-    y_pred = hyper_model.predict(X_test)
-    # print model
-    st.write(hyper_model)
+    with st.spinner("Loading hyperparameter model predictions..."):
+        y_pred = hyper_model.predict(X_test)
     # get R^2 score
     model_score = hyper_model.score(X_test,y_test)
     mse = mean_squared_error(y_test,y_pred)
@@ -563,14 +567,21 @@ def main():
     st.write("RMSE:",round(mse**(1/2),4))
     st.write("MAE:",round(mae,4))
     st.write("""
-             - Our RMSE went up by 5% from 149 to 157
-             - $R^2$ also decreased from 3% to -7%  and the MAE increased from 28 to 34
+             - Our RMSE went up from 97 to 104
+             - $R^2$ also decreased from 14% to 0.9%  and the MAE increased from 23 to 30. 
              
-             This doesn't look great. Let's see the top predictions using the new model
+             Our final model is not performing as expected and hence we need to try a few more tweaks in order to improve performance. 
+             For instance we can experiment with different sets of features or train a different algorithm.
+             
+             Here are the top predictions from our final model. Generally some predictions are quite ok and but we need to further minimize our error rate.
              """)
+    
     predicted_df = pd.DataFrame(y_pred,columns=['predicted'])
     y_test = y_test.reset_index(drop=True)
     actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
+    actual_v_predictions_df['error'] = np.round(actual_v_predictions_df['predicted'] - actual_v_predictions_df['price'],1)
+    
+    # show predictions
     st.write(actual_v_predictions_df.head(10))
     
     # check model score
