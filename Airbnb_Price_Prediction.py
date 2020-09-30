@@ -460,6 +460,9 @@ def main():
     predicted_df = pd.DataFrame(y_pred,columns=['predicted'])
     y_test = y_test.reset_index(drop=True)
     actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
+    actual_v_predictions_df['predicted'] = np.round(actual_v_predictions_df['predicted'],1)
+    # calculate errors
+    actual_v_predictions_df['error'] = actual_v_predictions_df['predicted'] - actual_v_predictions_df['price']
     st.write(actual_v_predictions_df.head(10))
     
     # hyperparameter tuning
@@ -573,13 +576,14 @@ def main():
              Our final model is not performing as expected and hence we need to try a few more tweaks in order to improve performance. 
              For instance we can experiment with different sets of features or train a different algorithm.
              
-             Here are the top predictions from our final model. Generally some predictions are quite ok and but we need to further minimize our error rate.
+             Here are the top predictions from our final model. Generally some predictions are quite ok but we need to further minimize our error rate.
              """)
     
     predicted_df = pd.DataFrame(y_pred,columns=['predicted'])
     y_test = y_test.reset_index(drop=True)
     actual_v_predictions_df = pd.concat([y_test,predicted_df],axis=1,sort=False)
-    actual_v_predictions_df['error'] = np.round(actual_v_predictions_df['predicted'] - actual_v_predictions_df['price'],1)
+    actual_v_predictions_df['predicted'] = np.round(actual_v_predictions_df['predicted'],1)
+    actual_v_predictions_df['error'] = actual_v_predictions_df['predicted'] - actual_v_predictions_df['price']
     
     # show predictions
     st.write(actual_v_predictions_df.head(10))
