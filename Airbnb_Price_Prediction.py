@@ -555,6 +555,7 @@ def main():
             joblib.dump(hyper_model,f,compress=3)
     
     st.write("Here is our model with the hyperparameters",
+             
              hyper_model)
     
     # make predictions with the model
